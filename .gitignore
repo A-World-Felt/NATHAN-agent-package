@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+.env
+.env.*
+!.env.example
+
+# réglages locaux à la machine, pas au projet
+.claude/settings.local.json
+
+# spec de travail, non versionnée (décision de l'équipe)
+/docs/specs
