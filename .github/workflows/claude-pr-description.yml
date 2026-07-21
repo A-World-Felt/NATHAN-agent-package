@@ -1,0 +1,86 @@
+name: Claude PR Description
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  generate-description:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Detect issue ID from branch name
+        id: issue
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          ISSUE_ID=$(echo "$BRANCH" | grep -oP 'NATHAN-\d+' || echo "")
+          echo "id=$ISSUE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Claude Generate PR Title and Description
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Tu documentes une PR du package `@a-world-felt/nathan-agent-core` — la couche
+            agentique LLM de NATHAN (IDE accessible à assistance vocale).
+
+            **Écris en français.** Direct et factuel, sans remplissage.
+
+            Mets à jour le titre et la description de cette PR avec `gh pr edit`.
+
+            **Format du titre : conventional commits** — `type(scope): description`
+            - type : feat | fix | refactor | docs | test | chore | build
+            - scope : llm | context | tools | agent | metrics | testing | docs | build
+            - Issue JIRA détectée (à ignorer si vide) : ${{ steps.issue.outputs.id }}
+              Si non vide, l'ajouter en fin de titre entre parenthèses.
+            - Exemples : `feat(llm): ajouter OllamaLLMProvider`
+                         `fix(agent): stopReason incorrect quand le budget est atteint`
+
+            **PAS D'EMOJI.** La convention du projet l'interdit explicitement
+            (voir `.claude/CLAUDE.md` § Conventions de commit).
+
+            **Corps :**
+
+            ## Changements
+            - Liste à puces concise (6 max) de ce qui change.
+
+            ## Vérification
+            - 2 à 4 puces. Chacune : quelle commande lancer + ce qu'on doit observer.
+            - Le critère de fin de la PR courante est dans `docs/plans/2026-07-21-v1-decoupage-pr.md` —
+              s'y référer si la PR correspond à l'une des six.
+            - Omettre uniquement pour les PR purement docs/chore.
+
+            ## Décisions
+            - À inclure UNIQUEMENT si la PR touche un contrat public (un port `I*.ts`), la carte
+              `exports`, ou s'écarte d'un ADR existant.
+            - Citer l'ADR concerné (`docs/decisions/ADR-AGENT-XXXX-*.md`).
+            - Si la PR prend une nouvelle décision d'architecture, le signaler : la gouvernance
+              du projet exige un ADR daté (ADR-0007 projet).
+            - Omettre la section sinon.
+
+            ## Impact
+            - Uniquement s'il y a une rupture d'API publique, une nouvelle dépendance,
+              ou une étape de migration pour les repos consommateurs.
+            - Une rupture de contrat de baril (`barrel-contract.test.ts`) est TOUJOURS un impact.
+            - Omettre sinon.
+
+            Analyse le diff avec `gh pr diff ${{ github.event.pull_request.number }}`, puis :
+            `gh pr edit ${{ github.event.pull_request.number }} --title "..." --body "..."`
+
+            Reste minimal et factuel. N'inclus que les sections qui apportent quelque chose
+            à CETTE PR.
+
+          claude_args: |
+            --allowedTools "Bash(gh pr edit:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
