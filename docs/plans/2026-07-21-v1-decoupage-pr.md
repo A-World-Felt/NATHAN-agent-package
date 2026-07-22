@@ -1,90 +1,90 @@
-# Découpage en PR — V1
+# PR breakdown: V1
 
-> **Date** : 2026-07-21
-> **Portée** : V1 du package (voir `ROADMAP.md`)
-> **Principe** : chaque PR ne dépend que des précédentes, et **chaque PR se vérifie**.
+> **Date**: 2026-07-21
+> **Scope**: V1 of the package (see `ROADMAP.md`)
+> **Principle**: each PR depends only on the previous ones, and **each PR is verifiable**.
 
 ---
 
-## Vue d'ensemble
+## Overview
 
-| PR | Contenu | Critère de fin |
+| PR | Content | Completion criterion |
 |---|---|---|
-| **1** | packaging + `models/` + **arborescence complète** + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
-| **2** | `ILLMProvider` + `OllamaLLMProvider` + `FakeLLMProvider` | test déterministe sur le faux ; un appel réel à Ollama |
-| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | troncature vérifiée, `observe()` no-op |
-| **4** | `AgenticLLM` + `step()` + `ToolDispatcher` | boucle testée **sur le faux** : dispatch, `maxIterations`, `stopReason` |
-| **5** | simulateur + `defineScenario` + `runScenario` | un scénario de navigation bout en bout |
-| **6** | `runMatrix` + métriques + `toJSON`/`toCSV` | une matrice 2 modèles × 2 mémoires × 5 exécutions |
+| **1** | packaging + `models/` + **complete tree** + schema | `npm run build` produces `dist/`; `npm install` succeeds from a test repo |
+| **2** | `ILLMProvider` + `OllamaLLMProvider` + `FakeLLMProvider` | deterministic test on the fake; one real call to Ollama |
+| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | truncation verified, `observe()` no-op |
+| **4** | `AgenticLLM` + `step()` + `ToolDispatcher` | loop tested **on the fake**: dispatch, `maxIterations`, `stopReason` |
+| **5** | simulator + `defineScenario` + `runScenario` | one end-to-end navigation scenario |
+| **6** | `runMatrix` + metrics + `toJSON`/`toCSV` | a 2 models × 2 memories × 5 runs matrix |
 
-Puis : intégration dans le repo IDE, et retour ici quand un mur apparaît.
+Then: integration into the IDE repo, and back here when a wall appears.
 
 ---
 
-## PR1 — Le package existe et se construit
+## PR1: The package exists and builds
 
-**Ce n'est pas une PR de fichiers vides.** Une arborescence sans contenu ne se vérifie pas : rien ne tourne, rien ne se teste, la revue n'a pas d'objet. Et la structure n'est qu'une hypothèse — on découvrirait en PR2 que la forme est fausse et la moitié serait déplacée.
+**This is not a PR of empty files.** A tree with no content cannot be verified: nothing runs, nothing is tested, the review has no object. And the structure is only a hypothesis: we would discover in PR2 that the shape is wrong and half of it would be moved.
 
-> **Révision 2026-07-21.** Le périmètre a été élargi : PR1 pose aussi **le squelette complet** de l'arborescence (tous les dossiers, marqués `.gitkeep`, cartographiés dans `ROADMAP.md`). Le raisonnement ci-dessus tient toujours pour le **code** — aucun `index.ts` stub, aucune classe vide. Ce qu'on ajoute, ce sont des **dossiers**, pas des fichiers de code vides : la structure est désormais figée (validée de bout en bout contre la page 5 du schéma et les 4 bandes), donc le risque de déplacement en PR2 est faible ; et le propriétaire veut naviguer l'architecture en dossiers dès le départ. La vérification comportementale (build + install) reste portée par les `models/` et le packaging, comme ci-dessous.
+> **Revision 2026-07-21.** The scope was widened: PR1 also lays down **the complete skeleton** of the tree (all folders, marked `.gitkeep`, mapped in `ROADMAP.md`). The reasoning above still holds for the **code**: no `index.ts` stub, no empty class. What we add are **folders**, not empty code files: the structure is now frozen (validated end to end against page 5 of the schema and the 4 bands), so the risk of moving things in PR2 is low; and the owner wants to navigate the architecture as folders from the start. Behavioral verification (build + install) is still carried by the `models/` and the packaging, as below.
 
-Le vrai jalon est **la chaîne de distribution**, avec le minimum de contenu réel :
+The real milestone is **the distribution chain**, with the minimum of real content:
 
-- `package.json` — les trois branches d'`exports` (`ADR-AGENT-0002`), `type: module`, `files: ["dist"]`
+- `package.json`: the three `exports` branches (`ADR-AGENT-0002`), `type: module`, `files: ["dist"]`
 - `tsconfig.json` + `tsconfig.build.json`
 - `.gitignore`, `.env.example`
-- `src/llm/models/` — `Message`, `ToolCall`, `ToolResult`, `LLMResponse`, `LLMError`
-- `src/tools/models/` — `ToolSchema`
+- `src/llm/models/`: `Message`, `ToolCall`, `ToolResult`, `LLMResponse`, `LLMError`
+- `src/tools/models/`: `ToolSchema`
 - `src/index.ts`
-- **le squelette complet de l'arborescence** (tous les dossiers, `.gitkeep`), cartographié dans `ROADMAP.md`
-- le schéma mis à jour
+- **the complete skeleton of the tree** (all folders, `.gitkeep`), mapped in `ROADMAP.md`
+- the updated schema
 
-Les types **sont** le contrat, ils sont purs, et `tsc` les vérifie.
+The types **are** the contract, they are pure, and `tsc` verifies them.
 
-**Vérification** : `npm run build` produit `dist/index.js` **et** `dist/index.d.ts` ; `npm pack` puis installation dans un repo jetable, avec un import qui compile.
+**Verification**: `npm run build` produces `dist/index.js` **and** `dist/index.d.ts`; `npm pack` then installation into a throwaway repo, with an import that compiles.
 
-> Piège ESM + `NodeNext` : les imports relatifs portent l'extension du fichier **émis**, donc `.js` même dans un `.ts`. `import type { Message } from "./models/index.js"`.
+> ESM + `NodeNext` pitfall: relative imports carry the extension of the **emitted** file, so `.js` even inside a `.ts`. `import type { Message } from "./models/index.js"`.
 
 ---
 
-## PR2 — Le port LLM et ses deux premières implémentations
+## PR2: The LLM port and its first two implementations
 
 - `llm/interfaces/ILLMProvider.ts`
-- `llm/providers/ollama/` — adaptateur réel
-- `testing/fake-llm-provider.ts` — réponses scriptées
-- `llm/providers/index.ts` — `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, fermé et typé
+- `llm/providers/ollama/`: real adapter
+- `testing/fake-llm-provider.ts`: scripted responses
+- `llm/providers/index.ts`: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed and typed
 
-**Le faux provider appartient à cette PR, pas au harnais.** C'est une deuxième implémentation du même port, écrite en même temps que lui. Deux raisons :
+**The fake provider belongs to this PR, not to the harness.** It is a second implementation of the same port, written at the same time as the port. Two reasons:
 
-1. **La PR4 en dépend.** Tester la boucle contre Ollama seul reviendrait à tester *le modèle* au lieu de *notre code* — impossible de distinguer un bug de dispatch d'un modèle qui a mal répondu.
-2. **C'est la vérification de l'interface.** Si le faux est pénible à écrire, le port est mauvais, et on l'apprend tout de suite.
+1. **PR4 depends on it.** Testing the loop against Ollama alone would amount to testing *the model* instead of *our code*: impossible to tell a dispatch bug from a model that answered badly.
+2. **It is the interface's verification.** If the fake is painful to write, the port is bad, and we learn it right away.
 
-`LLMResponse.usage` est rempli **dès maintenant** par l'adaptateur Ollama. Le rétro-ajouter dans chaque adaptateur plus tard coûte cher (`ADR-AGENT-0007`).
+`LLMResponse.usage` is filled **right now** by the Ollama adapter. Retro-adding it into each adapter later is expensive (`ADR-AGENT-0007`).
 
-> **À vérifier contre le vrai endpoint** avant de coder : les noms exacts des champs de comptage renvoyés par Ollama. Ne pas les reprendre de mémoire (règle anti-hallucination n°2).
+> **To be verified against the real endpoint** before coding: the exact names of the counting fields returned by Ollama. Do not carry them over from memory (anti-hallucination rule no. 2).
 
-**Vérification** : suite déterministe sur le faux ; un appel réel à Ollama, lancé à la main, dont la sortie est montrée dans la PR.
+**Verification**: deterministic suite on the fake; one real call to Ollama, launched by hand, whose output is shown in the PR.
 
 ---
 
-## PR3 — Contexte et comptage
+## PR3: Context and counting
 
-- `context/interfaces/IContextProvider.ts` — `build()`, `observe()`
+- `context/interfaces/IContextProvider.ts`: `build()`, `observe()`
 - `context/interfaces/ITokenCounter.ts`
 - `context/providers/sliding-window/`
-- `HeuristicTokenCounter` — caractères ÷ 4, documenté approximatif
+- `HeuristicTokenCounter`: characters ÷ 4, documented as approximate
 
-`observe()` est un no-op ici. C'est délibéré : l'ajouter en V3 casserait une interface déjà publiée.
+`observe()` is a no-op here. This is deliberate: adding it in V3 would break an already-published interface.
 
-**Vérification** : un historique qui déborde est tronqué ; le plus récent est conservé ; `observe()` ne fait rien sans planter.
+**Verification**: an overflowing history is truncated; the most recent is kept; `observe()` does nothing without crashing.
 
 ---
 
-## PR4 — La boucle
+## PR4: The loop
 
-- `agent/application/dtos/` — `AgentDeps`, `AgentInput`, `AgentResult`, `AgentState`
-- `agent/application/use-cases/agentic-llm.ts` — **classe `AgenticLLM`** : `run()`, `step()`
-- `agent/services/step.ts` — **fonction pure**, une itération
-- `tools/application/use-cases/dispatch-tool.ts` — `ToolDispatcher`
+- `agent/application/dtos/`: `AgentDeps`, `AgentInput`, `AgentResult`, `AgentState`
+- `agent/application/use-cases/agentic-llm.ts`: **class `AgenticLLM`**: `run()`, `step()`
+- `agent/services/step.ts`: **pure function**, one iteration
+- `tools/application/use-cases/dispatch-tool.ts`: `ToolDispatcher`
 - `agent/services/define-agent.ts`
 
 ```ts
@@ -92,54 +92,54 @@ const agent = new AgenticLLM({ llm, context, tools, maxIterations: 10 });
 const r = await agent.run("amène-moi aux réglages");
 ```
 
-La classe est l'API publique (`ADR-AGENT-0009`) ; `run()` enroule la fonction pure `step(state, deps)`, testable sans instancier quoi que ce soit.
+The class is the public API (`ADR-AGENT-0009`); `run()` wraps the pure function `step(state, deps)`, testable without instantiating anything.
 
-Terminaison par absence d'appel d'outil (`ADR-AGENT-0003`). Un outil qui échoue renvoie un `ToolResult` porteur de l'erreur — il ne fait pas tomber la boucle.
+Termination by absence of a tool call (`ADR-AGENT-0003`). A tool that fails returns a `ToolResult` carrying the error: it does not bring the loop down.
 
-**Sortie forcée par atterrissage, pas par coupure** (`ADR-AGENT-0011`) : budget atteint (itérations / durée / jetons) ou répétition détectée (même outil, mêmes arguments, ≥ 3 fois) → on injecte « conclus avec ce que tu as » et on rappelle le modèle **sans outils**, ce qui le force à rédiger.
+**Exit forced by graceful landing, not by cutoff** (`ADR-AGENT-0011`): budget reached (iterations / duration / tokens) or repetition detected (same tool, same arguments, ≥ 3 times) → we inject "conclude with what you have" and call the model back **without tools**, which forces it to write.
 
-**Vérification, entièrement sur le faux provider** :
+**Verification, entirely on the fake provider**:
 
-- une réponse sans appel d'outil → `stopReason: "completed"` ;
-- un aller-retour d'outil aboutit ;
-- budget épuisé → **une réponse rédigée est retournée**, `stopReason: "budget"` — pas un résultat vide ;
-- le dernier appel du scénario budget se fait bien **sans outils** (le faux provider permet de l'affirmer) ;
-- trois appels identiques d'affilée → `stopReason: "stuck"` ;
-- un outil qui lève est capturé.
+- a response with no tool call → `stopReason: "completed"`;
+- a tool round trip succeeds;
+- budget exhausted → **a written response is returned**, `stopReason: "budget"`: not an empty result;
+- the last call of the budget scenario is indeed made **without tools** (the fake provider lets us assert it);
+- three identical calls in a row → `stopReason: "stuck"`;
+- a tool that throws is caught.
 
-`step()` se teste directement, hors classe.
+`step()` is tested directly, outside the class.
 
 ---
 
-## PR5 — Le simulateur
+## PR5: The simulator
 
-- `testing/fake-app.ts` — fabrique d'environnement à état partagé
+- `testing/fake-app.ts`: shared-state environment factory
 - `testing/define-scenario.ts`, `testing/run-scenario.ts`
 
-Rappel des trois règles (`ADR-AGENT-0006`) : `env` est une **fabrique** (état neuf à chaque exécution), les attentes sont des **prédicats** (pas d'ordre strict imposé), et le résultat conserve la trace.
+Reminder of the three rules (`ADR-AGENT-0006`): `env` is a **factory** (fresh state on each run), expectations are **predicates** (no strict order imposed), and the result keeps the trace.
 
-**Aucune table de substitution à écrire** (`ADR-AGENT-0010`) : le harnais construit un `AgenticLLM` avec les outils du simulateur, exactement comme la production le construit avec les siens. Il teste donc le **vrai** `ToolDispatcher`.
+**No substitution table to write** (`ADR-AGENT-0010`): the harness builds an `AgenticLLM` with the simulator's tools, exactly as production builds it with its own. It therefore tests the **real** `ToolDispatcher`.
 
-**Vérification** : « amène-moi aux réglages » avec un faux provider scripté, et l'assertion porte sur l'**état du simulateur**, pas seulement sur la liste des appels.
-
----
-
-## PR6 — La matrice et les métriques
-
-- `metrics/` — `IMetricsCollector`, `MetricsCollector`, agrégation pure
-- `llm/infrastructure/with-metrics.ts` — le décorateur
-- `testing/run-matrix.ts` — produit cartésien des axes, `runs` répétitions, rapport
-
-Portée par instance, jamais `start`/`stop` (`ADR-AGENT-0007`). Tarifs passés en argument. Dimensions séparées, pas de score composite.
-
-**Vérification** : une matrice 2 × 2 × 5 sur le faux provider produit 20 exécutions, un taux par combinaison, et un CSV lisible. Les échecs conservent leur trace.
+**Verification**: "amène-moi aux réglages" with a scripted fake provider, and the assertion bears on the **simulator's state**, not only on the list of calls.
 
 ---
 
-## Conventions transverses
+## PR6: The matrix and the metrics
 
-- **Commits** : `type(scope): description` (`feat(llm): ajouter OllamaLLMProvider`). Pas les emojis cuisine de Marcel, spécifiques à leur projet.
-- **Tests unitaires** : `node:test`, zéro dépendance.
-- **Évals** : programme lancé à la main, jamais bloquant en CI.
-- **Baril par couche**, avec `barrel-contract.test.ts` qui verrouille l'API publique — précieux pour un package : un export retiré par mégarde casse un test, pas un consommateur.
-- **Jamais** de clé d'API en dur, jamais de `.env` commité.
+- `metrics/`: `IMetricsCollector`, `MetricsCollector`, pure aggregation
+- `llm/infrastructure/with-metrics.ts`: the decorator
+- `testing/run-matrix.ts`: cartesian product of the axes, `runs` repetitions, report
+
+Per-instance scope, never `start`/`stop` (`ADR-AGENT-0007`). Rates passed as an argument. Separate dimensions, no composite score.
+
+**Verification**: a 2 × 2 × 5 matrix on the fake provider produces 20 runs, one rate per combination, and a readable CSV. Failures keep their trace.
+
+---
+
+## Cross-cutting conventions
+
+- **Commits**: `type(scope): description` (`feat(llm): ajouter OllamaLLMProvider`). Not Marcel's kitchen emojis, specific to their project.
+- **Unit tests**: `node:test`, zero dependency.
+- **Evals**: program launched by hand, never blocking in CI.
+- **Barrel per layer**, with `barrel-contract.test.ts` that locks the public API: valuable for a package, since an export removed by mistake breaks a test, not a consumer.
+- **Never** a hard-coded API key, never a committed `.env`.
