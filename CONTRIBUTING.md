@@ -137,14 +137,14 @@ Le *pourquoi* est dans les ADR (`docs/decisions/`), en particulier `ADR-AGENT-00
 
 Deux versionings à ne pas confondre.
 
-**Le package** est en **SemVer** (`version` dans `package.json`). Protocole de bump :
+**Le package** est en **SemVer** (`version` dans `package.json`) et publié sur le **registre GitHub Packages** de l'organisation. La publication est **pilotée par le tag** : pousser un tag `v*` déclenche `.github/workflows/publish.yml`, qui build et lance `npm publish`. Protocole de release :
 
 1. Modifier `version` dans `package.json` (ex. `0.1.0-alpha` → `0.1.0`, puis `0.1.0` → `0.2.0`). Les préversions portent un suffixe : `-alpha`, `-beta`, `-rc.1`.
 2. Mettre à jour **Version courante** dans `README.md`.
 3. Commiter : `chore: bump vX.Y.Z (JIRAID)`.
-4. Tagger : `git tag vX.Y.Z`, puis `git push origin <branche> --tags`.
-5. Les consommateurs repointent leur dépendance git : `…NATHAN-agent-package#vX.Y.Z`.
+4. Tagger et pousser le tag : `git tag vX.Y.Z`, puis `git push origin main --tags`.
+5. La CI (`publish.yml`) détecte le tag `v*`, build, et publie sur le registre. Les consommateurs repointent leur plage SemVer (`^X.Y.Z`).
 
-La consommation se fait **par tag git** (`github:A-World-Felt/NATHAN-agent-package#vX.Y.Z`), sans registre ni jeton npm. La publication au **registre GitHub Packages** (workflow `publish.yml` déclenché sur tag `v*`) n'est **pas encore en place** : c'est un lot séparé (DEV-204) ; cette section gagnera le flux registre quand il atterrira.
+**Merger dans `main` ne publie rien** : seule la poussée d'un tag `v*` déclenche la publication. Par convention, le bump et le tag se font sur `main` (release coupée depuis `main` après merge). Le workflow `publish.yml` doit donc être présent dans `main`.
 
 **Les agents**, eux, ne sont **pas** versionnés par un champ : un agent est un fichier TypeScript commité, la version c'est git, et « cette version est bonne » ce sont les tests/évals qui le prouvent. Ni champ `version`, ni registre runtime. Voir `ROADMAP.md` et `ADR-AGENT-0005`. Versionner un prompt n'a d'intérêt que si le harnais peut **mesurer** que la v2 bat la v1.

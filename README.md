@@ -13,23 +13,32 @@ Le raisonnement derrière chaque choix de conception est dans [`docs/decisions/`
 
 ## Installation
 
-Le package se consomme en **dépendance git par tag** : npm clone le repo, lit son `package.json` et le résout sous le nom scopé. **Aucun jeton npm requis** : l'authentification passe par git (SSH, ou HTTPS avec un jeton GitHub qui a accès au repo privé). npm exécute le `prepare` (build `tsc`) à l'installation.
+Le package est publié sur le **registre GitHub Packages** de l'organisation `A-World-Felt`. Le consommateur configure le registre pour le scope `@a-world-felt`, puis installe par **SemVer**.
 
-```bash
-npm i github:A-World-Felt/NATHAN-agent-package#v0.1.0-alpha
+`.npmrc`, à la racine du projet consommateur :
+
+```
+@a-world-felt:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-Dans le `package.json` du consommateur, la clé de dépendance est le **nom scopé** ; la valeur est la spec git :
+```bash
+npm i @a-world-felt/nathan-agent-core@^0.1.0-alpha
+```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "github:A-World-Felt/NATHAN-agent-package#v0.1.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.1.0-alpha"
   }
 }
 ```
 
-On épingle une **version** via le tag (`#vX.Y.Z`) ; pour repointer, on change le tag (voir la convention de versioning dans [CONTRIBUTING.md](./CONTRIBUTING.md)).
+Le registre **exige une authentification**, même en lecture (package privé) :
+- **En local** : un PAT GitHub avec la portée `read:packages`, exporté dans `NODE_AUTH_TOKEN` (jamais commité).
+- **En GitHub Actions** : `actions/setup-node` avec `registry-url: https://npm.pkg.github.com` génère le `.npmrc`, et le `GITHUB_TOKEN` intégré suffit.
+
+On épingle une plage SemVer (`^X.Y.Z`) ; la publication d'une nouvelle version est décrite dans la convention de versioning de [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
