@@ -1,13 +1,13 @@
-# Conventions de contribution (nathan-agent-core)
+# Contribution conventions (nathan-agent-core)
 
-Branches, commits et PR. Trois formats, un seul principe : **l'identifiant JIRA voyage partout**, pour que la traçabilité ticket ↔ code ↔ PR ne repose sur la mémoire de personne.
+Branches, commits and PRs. Three formats, one single principle: **the JIRA ID travels everywhere**, so that ticket ↔ code ↔ PR traceability rests on nobody's memory.
 
 ---
 
 ## 1. Branches
 
 ```
-type/JIRAID-nom-court
+type/JIRAID-short-name
 ```
 
 ```
@@ -16,29 +16,29 @@ fix/DEV-207-stopreason-budget
 docs/DEV-212-adr-tokenizer
 ```
 
-| Segment | Règle |
+| Segment | Rule |
 |---|---|
-| `type` | un de la liste ci-dessous, en minuscules |
-| `JIRAID` | clé JIRA en MAJUSCULES + numéro : `DEV-194` |
-| `nom-court` | 2 à 5 mots, minuscules, tirets. Décrit le *quoi*, pas le *comment*. |
+| `type` | one from the list below, lowercase |
+| `JIRAID` | JIRA key in UPPERCASE + number: `DEV-194` |
+| `short-name` | 2 to 5 words, lowercase, dashes. Describes the *what*, not the *how*. |
 
-**Types**, identiques à ceux des commits :
+**Types**, identical to the commit ones:
 
 | Type | Usage |
 |---|---|
-| `feat` | nouvelle fonctionnalité |
-| `fix` | correction de bogue |
-| `refactor` | restructuration sans changement de comportement |
-| `docs` | documentation, ADR, schémas |
-| `test` | tests ou harnais uniquement |
-| `chore` | outillage, dépendances, ménage |
+| `feat` | new feature |
+| `fix` | bug fix |
+| `refactor` | restructuring without behavior change |
+| `docs` | documentation, ADRs, schemas |
+| `test` | tests or harness only |
+| `chore` | tooling, dependencies, cleanup |
 | `build` | build, packaging, CI |
 
-**Règles**
+**Rules**
 
-- Jamais de travail direct sur `main`. Seule exception : le commit d'amorçage du dépôt, déjà passé.
-- Une branche = un ticket. Si le périmètre déborde, ouvrir un second ticket plutôt qu'élargir la branche.
-- Branche supprimée après fusion.
+- Never work directly on `main`. The only exception: the repository bootstrap commit, already done.
+- One branch = one ticket. If scope overflows, open a second ticket rather than widening the branch.
+- Branch deleted after merge.
 
 ---
 
@@ -49,102 +49,104 @@ type(scope): description (JIRAID)
 ```
 
 ```
-feat(llm): ajouter OllamaLLMProvider (DEV-194)
-fix(agent): stopReason incorrect quand le budget est atteint (DEV-207)
-docs(schema): corriger les fleches UML des realisations (DEV-212)
-build(ci): ajouter le workflow de revue (DEV-201)
+feat(llm): add OllamaLLMProvider (DEV-194)
+fix(agent): incorrect stopReason when the budget is reached (DEV-207)
+docs(schema): fix the UML realization arrows (DEV-212)
+build(ci): add the review workflow (DEV-201)
 ```
 
-L'identifiant est **en fin de sujet, entre parenthèses**. Ce placement garde le `scope` pour le domaine technique (l'information utile en lecture d'historique) tout en laissant JIRA rattacher le commit à son ticket.
+The ID is **at the end of the subject, in parentheses**. This placement keeps the `scope` for the technical domain (the useful information when reading history) while letting JIRA attach the commit to its ticket.
 
-**Scopes**, le domaine touché, aligné sur l'arborescence `src/` :
+**Scopes**, the touched domain, aligned with the `src/` tree:
 
 `llm` · `context` · `tools` · `agent` · `metrics` · `testing` · `schema` · `docs` · `ci`
 
-Le scope est facultatif quand le changement est transverse : `chore: mettre a jour les dependances (DEV-220)`.
+The scope is optional when the change is cross-cutting: `chore: update dependencies (DEV-220)`.
 
-**Règles**, reprises de `.claude/commands/commit.md` :
+**Rules**, taken from `.claude/commands/commit.md`:
 
-- **Des commits séparés et logiques.** Un commit = un changement cohérent. Regrouper un refactor et une correction dans le même commit rend le `revert` impossible.
-- **Jamais `git add -A` ni `git add .`** : stager les fichiers explicitement, un commit à la fois.
-- **Jamais d'`amend`** sur un commit existant.
-- **Pas de ligne `Co-Authored-By`.**
-- Message concis, 1 à 2 lignes. Le corps est réservé au *pourquoi*, quand il n'est pas évident.
-- **Pas d'emoji.** Les emojis cuisine de `C:\Marcel` sont spécifiques à ce projet-là et n'ont pas cours ici.
+- **Separate, logical commits.** One commit = one coherent change. Grouping a refactor and a fix in the same commit makes `revert` impossible.
+- **Never `git add -A` or `git add .`**: stage files explicitly, one commit at a time.
+- **Never `amend`** an existing commit.
+- **No `Co-Authored-By` line.**
+- Concise message, 1 to 2 lines. The body is reserved for the *why*, when it is not obvious.
+- **No emoji.** The kitchen emojis from `C:\Marcel` are specific to that project and have no place here.
 
 ---
 
 ## 3. Pull requests
 
-Le workflow `.github/workflows/claude-pr-description.yml` **génère le titre et le corps** à l'ouverture de la PR (événement `opened`), en détectant l'identifiant JIRA **depuis le nom de la branche** (d'où l'importance du format de la §1). La convention ci-dessous est celle que ce workflow applique : il en est la source de vérité.
+The `.github/workflows/claude-pr-description.yml` workflow **generates the title and body** when the PR is opened (the `opened` event), detecting the JIRA ID **from the branch name** (hence the importance of the §1 format). The convention below is the one this workflow applies: it is the source of truth for it.
 
-**Titre**, la même forme que les commits (§2) :
+Note: unlike commits (§2), the **PR title uses its own shape**. Commits stay `type(scope): description (JIRAID)`; the PR title is the one below.
+
+**Title**:
 
 ```
-type(scope): description (JIRAID)
+{Type} : {Issue-ID} – {Short summary}
 ```
 
-- `type` : `feat | fix | refactor | docs | test | chore | build`
-- `scope` : `llm | context | tools | agent | metrics | testing | schema | docs | ci` (facultatif si transverse)
-- **JIRAID détecté depuis la branche. S'il est vide, on retire les parenthèses finales. On n'invente rien.**
-- **Pas d'emoji** (§2).
+- `Type`: `Feature | Bugfix | Refactor | Docs | Chore | Hotfix`
+- `Issue-ID`: detected from the branch. **If empty, the `{Issue-ID} – ` part is dropped. We invent nothing.**
+- `Short summary`: one clear sentence fragment.
+- **No emoji.**
 
-**Corps**, quatre sections, **incluses seulement quand elles apportent quelque chose** :
+**Body**, four sections, **included only when they add value**:
 
-| Section | Quand l'inclure | Contenu |
+| Section | When to include it | Contents |
 |---|---|---|
-| **Changements** | toujours | liste à puces concise (6 max) de ce qui change |
-| **Vérification** | sauf PR purement docs/chore | 2 à 4 puces, chacune = *quelle commande lancer + ce qu'on doit observer*. Le critère de fin de la PR est dans `docs/plans/2026-07-21-v1-decoupage-pr.md` pour chacune des six PR de la V1, s'y référer |
-| **Décisions** | seulement si la PR touche un contrat public (un port `I*.ts`, la carte `exports`) ou s'écarte d'un ADR | citer l'ADR concerné. Une **nouvelle** décision d'architecture exige un ADR daté (`docs/decisions/`) : gouvernance du projet, ADR-0007 |
-| **Impact** | seulement s'il y a rupture d'API publique, nouvelle dépendance, ou étape de migration pour les consommateurs | une rupture de contrat de baril (`barrel-contract.test.ts`) est **toujours** un Impact |
+| **Changes** | always | concise bullet list (6 max) of what changed |
+| **How to test** | except for pure config/chore/docs PRs with nothing to test | 2 to 4 bullets, each = *where to go + what to do + what to verify* (happy path + one edge case if relevant). The PR completion criterion is in `docs/plans/2026-07-21-v1-decoupage-pr.md` for each of the six V1 PRs; refer to it |
+| **Architecture** | only if the PR introduces or changes a meaningful flow (new service wiring, new route, new pipeline, new component interaction) | a small Mermaid diagram (`flowchart LR` for data/call flows, `sequenceDiagram` for request/response), max 8 nodes. No diagram for UI-only or trivial changes |
+| **Impact** | only if there is a breaking change, a new dependency, or a migration step | a barrel contract break (`barrel-contract.test.ts`) is **always** an Impact |
 
-**Ce que le contributeur fait donc avant d'ouvrir la PR** : nommer la branche correctement (§1, pour que l'identifiant soit détecté) et vérifier le critère de fin de la PR. Le workflow rédige le reste.
+**What the contributor therefore does before opening the PR**: name the branch correctly (§1, so the ID is detected) and check the PR completion criterion. The workflow writes the rest.
 
 ---
 
-## 4. Traçabilité
+## 4. Traceability
 
 ```
-Ticket JIRA  →  branche  →  commits  →  PR  →  ADR (si décision)
+JIRA ticket  →  branch  →  commits  →  PR  →  ADR (if decision)
    DEV-194      feat/DEV-194-…    (DEV-194)    (DEV-194)    ADR-AGENT-00XX
 ```
 
-C'est le même schéma que le reste du projet (`PMC/CONTEXT-AGENT.md` §10.3), appliqué au code.
+This is the same scheme as the rest of the project (`PMC/CONTEXT-AGENT.md` §10.3), applied to code.
 
 ---
 
-## 5. Conventions de code
+## 5. Code conventions
 
-### 5.1 Fichiers
+### 5.1 Files
 
-- **TypeScript strict** : pas de `any` sans commentaire qui le justifie.
-- Fichiers en **`kebab-case.ts`** ; ports en **`IPascalCase.ts`** (`ILLMProvider.ts`, `IContextProvider.ts`).
-- **Un baril `index.ts` par couche.** Les consommateurs (internes comme externes) importent **depuis le baril**, jamais d'un fichier individuel.
-- **Tests de contrat de baril** (`barrel-contract.test.ts`) : ils verrouillent l'API publique. Un export retiré par mégarde casse un test, pas un consommateur.
-- `models/` : types seulement, aucune dépendance runtime, aucun import de SDK.
-- Code simple et lisible ; commenter la logique non évidente (prompts, transformations). Pas de génériques sophistiqués pour un cas unique.
-- Piège ESM + `NodeNext` : import relatif avec l'extension du fichier **émis**, donc `.js` même depuis un `.ts` : `import type { Message } from "./models/index.js"`.
+- **Strict TypeScript**: no `any` without a comment that justifies it.
+- Files in **`kebab-case.ts`**; ports in **`IPascalCase.ts`** (`ILLMProvider.ts`, `IContextProvider.ts`).
+- **One `index.ts` barrel per layer.** Consumers (internal and external alike) import **from the barrel**, never from an individual file.
+- **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. An export removed by mistake breaks a test, not a consumer.
+- `models/`: types only, no runtime dependency, no SDK import.
+- Simple, readable code; comment non-obvious logic (prompts, transformations). No sophisticated generics for a single case.
+- ESM + `NodeNext` pitfall: relative import with the **emitted** file's extension, so `.js` even from a `.ts`: `import type { Message } from "./models/index.js"`.
 
 ### 5.2 Architecture
 
-Hexagonale : ports et adaptateurs, séparation stricte. Le domaine l'impose (six ports, une quinzaine d'implémentations). La règle de placement par fichier, le patron de couches commun aux six frameworks, la distinction classes/fonctions et l'interdiction du registre runtime sont détaillés dans :
+Hexagonal: ports and adapters, strict separation. The domain imposes it (six ports, about fifteen implementations). The per-file placement rule, the layer pattern common to the six frameworks, the class/function distinction and the ban on the runtime registry are detailed in:
 
-> **[`docs/conventions/architecture.md`](./docs/conventions/architecture.md)** : à lire avant de créer un fichier ou de déplacer du code.
+> **[`docs/conventions/architecture.md`](./docs/conventions/architecture.md)**: to read before creating a file or moving code.
 
-Le *pourquoi* est dans les ADR (`docs/decisions/`), en particulier `ADR-AGENT-0001`, `-0002`, `-0009`, `-0005`.
+The *why* is in the ADRs (`docs/decisions/`), in particular `ADR-AGENT-0001`, `-0002`, `-0009`, `-0005`.
 
 ### 5.3 Versioning
 
-Deux versionings à ne pas confondre.
+Two versionings not to be confused.
 
-**Le package** est en **SemVer** (`version` dans `package.json`). Protocole de bump :
+**The package** is on **SemVer** (`version` in `package.json`). Bump protocol:
 
-1. Modifier `version` dans `package.json` (ex. `0.1.0-alpha` → `0.1.0`, puis `0.1.0` → `0.2.0`). Les préversions portent un suffixe : `-alpha`, `-beta`, `-rc.1`.
-2. Mettre à jour **Version courante** dans `README.md`.
-3. Commiter : `chore: bump vX.Y.Z (JIRAID)`.
-4. Tagger : `git tag vX.Y.Z`, puis `git push origin <branche> --tags`.
-5. Les consommateurs repointent leur dépendance git : `…NATHAN-agent-package#vX.Y.Z`.
+1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.1.0`, then `0.1.0` → `0.2.0`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
+2. Update **Current version** in `README.md`.
+3. Commit: `chore: bump vX.Y.Z (JIRAID)`.
+4. Tag: `git tag vX.Y.Z`, then `git push origin <branch> --tags`.
+5. Consumers repoint their git dependency: `…NATHAN-agent-package#vX.Y.Z`.
 
-La consommation se fait **par tag git** (`github:A-World-Felt/NATHAN-agent-package#vX.Y.Z`), sans registre ni jeton npm. La publication au **registre GitHub Packages** (workflow `publish.yml` déclenché sur tag `v*`) n'est **pas encore en place** : c'est un lot séparé (DEV-204) ; cette section gagnera le flux registre quand il atterrira.
+Consumption happens **by git tag** (`github:A-World-Felt/NATHAN-agent-package#vX.Y.Z`), with no registry or npm token. Publication to the **GitHub Packages registry** (the `publish.yml` workflow triggered on `v*` tags) is **not yet in place**: it is a separate batch (DEV-204); this section will gain the registry flow when it lands.
 
-**Les agents**, eux, ne sont **pas** versionnés par un champ : un agent est un fichier TypeScript commité, la version c'est git, et « cette version est bonne » ce sont les tests/évals qui le prouvent. Ni champ `version`, ni registre runtime. Voir `ROADMAP.md` et `ADR-AGENT-0005`. Versionner un prompt n'a d'intérêt que si le harnais peut **mesurer** que la v2 bat la v1.
+**Agents**, on the other hand, are **not** versioned by a field: an agent is a committed TypeScript file, the version is git, and "this version is good" is what the tests/evals prove. No `version` field, no runtime registry. See `ROADMAP.md` and `ADR-AGENT-0005`. Versioning a prompt is only worthwhile if the harness can **measure** that v2 beats v1.
