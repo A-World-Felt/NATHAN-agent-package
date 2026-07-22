@@ -2,7 +2,7 @@
   "name": "@a-world-felt/nathan-agent-core",
   "version": "0.1.0-alpha",
   "type": "module",
-  "description": "Couche agentique LLM de NATHAN : moteur (providers, outils, boucle, memoire), definitions d'agents et harnais de test.",
+  "description": "NATHAN's LLM agentic layer: engine (providers, tools, loop, memory), agent definitions, and test harness.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

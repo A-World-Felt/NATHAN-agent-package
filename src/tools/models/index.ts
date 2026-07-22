@@ -1,6 +1,6 @@
-// Modèles du framework Outils. Types purs, aucune dépendance.
+// Tools framework models. Pure types, no dependency.
 
-/** Types JSON Schema utilisés pour décrire un paramètre d'outil. */
+/** JSON Schema types used to describe a tool parameter. */
 export type JSONSchemaType =
   | "string"
   | "number"
@@ -10,23 +10,23 @@ export type JSONSchemaType =
   | "array";
 
 /**
- * Un paramètre d'outil, sous-ensemble de JSON Schema.
- * On ne modélise pas JSON Schema en entier — seulement ce qu'un appel d'outil utilise
- * (pas d'overhead, CLAUDE.md). À étendre si un besoin réel apparaît.
+ * A tool parameter, a subset of JSON Schema.
+ * We do not model the whole of JSON Schema, only what a tool call uses
+ * (no overhead, CLAUDE.md). Extend it if a real need arises.
  */
 export type JSONSchemaProperty = {
   type: JSONSchemaType;
   description?: string;
   enum?: string[];
-  items?: JSONSchemaProperty; // pour type: "array"
-  properties?: Record<string, JSONSchemaProperty>; // pour type: "object"
+  items?: JSONSchemaProperty; // for type: "array"
+  properties?: Record<string, JSONSchemaProperty>; // for type: "object"
   required?: string[];
 };
 
 /**
- * Schéma des paramètres d'un outil, tel que présenté au modèle.
- * Le modèle ne peut pas appeler un outil dont il ignore les paramètres :
- * ce schéma est obligatoire (spec §10, ADR-0006 projet).
+ * Schema of a tool's parameters, as presented to the model.
+ * The model cannot call a tool whose parameters it does not know:
+ * this schema is mandatory (spec §10, project ADR-0006).
  */
 export type ToolSchema = {
   type: "object";
