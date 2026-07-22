@@ -21,9 +21,13 @@ jobs:
       - name: Detect issue ID from branch name
         id: issue
         run: |
+          # convention : type/JIRAID-nom-court  (voir CONTRIBUTING.md §1)
           BRANCH="${{ github.head_ref }}"
-          ISSUE_ID=$(echo "$BRANCH" | grep -oP 'NATHAN-\d+' || echo "")
+          ISSUE_ID=$(echo "$BRANCH" | grep -oP '[A-Z]+-\d+' | head -1 || echo "")
           echo "id=$ISSUE_ID" >> "$GITHUB_OUTPUT"
+          if [ -z "$ISSUE_ID" ]; then
+            echo "::warning::Aucun identifiant JIRA dans '$BRANCH' — attendu type/JIRAID-nom (voir CONTRIBUTING.md)"
+          fi
 
       - name: Claude Generate PR Title and Description
         uses: anthropics/claude-code-action@v1
@@ -40,16 +44,20 @@ jobs:
 
             Mets à jour le titre et la description de cette PR avec `gh pr edit`.
 
-            **Format du titre : conventional commits** — `type(scope): description`
+            **Format du titre** — identique aux commits, voir `CONTRIBUTING.md` §2 :
+
+                type(scope): description (JIRAID)
+
             - type : feat | fix | refactor | docs | test | chore | build
-            - scope : llm | context | tools | agent | metrics | testing | docs | build
-            - Issue JIRA détectée (à ignorer si vide) : ${{ steps.issue.outputs.id }}
-              Si non vide, l'ajouter en fin de titre entre parenthèses.
-            - Exemples : `feat(llm): ajouter OllamaLLMProvider`
-                         `fix(agent): stopReason incorrect quand le budget est atteint`
+            - scope : llm | context | tools | agent | metrics | testing | schema | docs | ci
+              (facultatif si le changement est transverse)
+            - Identifiant JIRA détecté depuis la branche : ${{ steps.issue.outputs.id }}
+              S'il est vide, omettre les parenthèses finales — ne rien inventer.
+            - Exemples : `feat(llm): ajouter OllamaLLMProvider (DEV-194)`
+                         `fix(agent): stopReason incorrect quand le budget est atteint (DEV-207)`
 
             **PAS D'EMOJI.** La convention du projet l'interdit explicitement
-            (voir `.claude/CLAUDE.md` § Conventions de commit).
+            (`CONTRIBUTING.md` §2).
 
             **Corps :**
 
