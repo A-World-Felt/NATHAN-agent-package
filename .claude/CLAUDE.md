@@ -11,6 +11,7 @@ Project context: NATHAN Console v2.0, an AI voice-assisted accessible programmin
 | Document | Content |
 |---|---|
 | `docs/decisions/` | **the ADRs**: context, options evaluated, decision, consequences. Read before challenging a choice. |
+| `docs/theory/` | **reference material** the ADRs rest on: provider/API research, non-decisional. Versioned. Each doc names its verification status and cites its sources. |
 | `docs/specs/2026-07-14-agent-core-design.md` | the V1 design: contracts, loop, harness, deviations from the diagram. **Not versioned** (`.gitignore`): a local working document. What must survive lives in the ADRs. |
 | `docs/plans/2026-07-21-v1-decoupage-pr.md` | the split into 6 PRs, with the verification criterion for each |
 | `ROADMAP.md` | the four versions and what is deferred without a date |
