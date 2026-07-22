@@ -1,38 +1,38 @@
-# ADR-AGENT-0002 — Trois points d'entrée, outils à la carte
+# ADR-AGENT-0002: Three entry points, opt-in tools
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-Le package livre trois natures de code qui n'ont pas les mêmes contraintes :
+The package ships three kinds of code that do not share the same constraints:
 
-| Nature | Contrainte |
+| Kind | Constraint |
 |---|---|
-| Moteur (ports, boucle, `defineAgent`) | doit être importable partout, y compris là où il n'y a pas de disque |
-| Outils fichiers génériques | couplés à `fs` |
-| Harnais de test | ne doit **jamais** partir dans un bundle de production |
+| Engine (ports, loop, `defineAgent`) | must be importable everywhere, including where there is no disk |
+| Generic file tools | coupled to `fs` |
+| Test harness | must **never** end up in a production bundle |
 
-Décision explicite de l'équipe : « les outils peuvent être ajoutés du repo consommateur. Le package peut en fournir des génériques mais ce ne sont pas des outils toujours là. »
+Explicit team decision: "tools can be added from the consumer repo. The package may provide generic ones, but they are not tools that are always present."
 
-Si tout sort d'un baril unique, importer le package pour lire un type traîne `fs` et le code de test derrière lui.
+If everything comes out of a single barrel, importing the package just to read a type drags `fs` and the test code along with it.
 
-Précédent maison : `NATHAN-jira-package` n'a qu'une branche d'`exports`. Marcel, lui, sépare déjà `llm/index.ts` de `llm/server.ts` avec une garde `import "server-only"` — le réflexe existe.
+In-house precedent: `NATHAN-jira-package` has only one `exports` branch. Marcel, for its part, already separates `llm/index.ts` from `llm/server.ts` with an `import "server-only"` guard: the instinct exists.
 
-## Options évaluées
+## Options considered
 
-**A — Un seul baril.**
-Le plus simple à écrire. Traîne `fs` et le harnais partout ; rend impossible toute exécution hors Node.
+**A: A single barrel.**
+The simplest to write. Drags `fs` and the harness everywhere; makes any non-Node execution impossible.
 
-**B — Trois sous-chemins dans la carte `exports`.**
-`.`, `./tools`, `./testing`. Une seule unité de publication, trois surfaces.
+**B: Three subpaths in the `exports` map.**
+`.`, `./tools`, `./testing`. A single publication unit, three surfaces.
 
-**C — Trois packages npm séparés.**
-Séparation maximale. Trois versions à synchroniser, trois publications, pour un projet à un seul mainteneur. Overhead disproportionné.
+**C: Three separate npm packages.**
+Maximum separation. Three versions to keep in sync, three publications, for a single-maintainer project. Disproportionate overhead.
 
-## Décision
+## Decision
 
 **Option B.**
 
@@ -44,28 +44,28 @@ Séparation maximale. Trois versions à synchroniser, trois publications, pour u
 }
 ```
 
-- `.` — moteur, ports, `defineAgent`, types. **Aucun accès disque.**
-- `./tools` — outils génériques fournis. Opt-in.
-- `./testing` — simulateur, faux provider, scénarios.
+- `.`: engine, ports, `defineAgent`, types. **No disk access.**
+- `./tools`: the generic tools provided. Opt-in.
+- `./testing`: simulator, fake provider, scenarios.
 
-`ITool` et le dispatch restent dans `.` : tout le monde en a besoin. Seules les **implémentations** concrètes d'outils partent dans `./tools`.
+`ITool` and dispatch stay in `.`: everyone needs them. Only the concrete tool **implementations** move to `./tools`.
 
-Un agent reçoit exactement les outils qu'on lui passe. **Rien d'implicite.**
+An agent receives exactly the tools it is handed. **Nothing implicit.**
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Le point d'entrée principal reste léger et portable.
-- Le harnais ne peut pas se retrouver en production par inadvertance.
-- Le consommateur choisit ses outils comme il choisit son provider — même philosophie sur les deux axes.
+- The main entry point stays light and portable.
+- The harness cannot end up in production by accident.
+- The consumer chooses its tools the way it chooses its provider: the same philosophy on both axes.
 
-**Négatives**
+**Negative**
 
-- Carte `exports` à maintenir : un nouveau sous-chemin est un changement d'API publique.
-- Écart avec `NATHAN-jira-package`, dont la carte n'a qu'une branche. Documenté dans `CLAUDE.md`.
-- Les tests de contrat de baril doivent couvrir les trois branches, pas une.
+- An `exports` map to maintain: a new subpath is a public-API change.
+- A deviation from `NATHAN-jira-package`, whose map has only one branch. Documented in `CLAUDE.md`.
+- The barrel-contract tests must cover all three branches, not one.
 
-**Risque connu**
+**Known risk**
 
-Les outils fichiers couplent `./tools` à Node. L'IDE NATHAN étant Electron ou Tauri, Node est présent. Si un consommateur devait un jour tourner dans un navigateur, `./tools` casserait à l'import — mais `.` resterait saine. C'est précisément ce que cette séparation protège.
+The file tools couple `./tools` to Node. Since NATHAN's IDE is Electron or Tauri, Node is present. If a consumer ever had to run in a browser, `./tools` would break on import, but `.` would stay sound. That is precisely what this separation protects.

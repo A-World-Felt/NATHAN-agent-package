@@ -1,97 +1,97 @@
-# ADR-AGENT-0001 — Architecture hexagonale
+# ADR-AGENT-0001: Hexagonal architecture
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
-- **Complété par** : [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md) — classes pour l'API publique, fonctions pures à l'intérieur.
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
+- **Complemented by**: [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md): classes for the public API, pure functions inside.
 
-> **Note de révision (2026-07-21).** La justification de cet ADR a été réécrite le jour même de sa rédaction, avant tout commit et avant toute ligne de code. La version initiale motivait la décision par « reprise de la convention de Marcel » — une citation à la fois inexacte et inutile : l'équipe ne connaît pas Marcel, ce n'est pas le consommateur du package, et la décision découle du domaine. La **décision est inchangée** ; seul son fondement est corrigé.
+> **Revision note (2026-07-21).** The rationale for this ADR was rewritten the same day it was written, before any commit and before any line of code. The initial version justified the decision as "reusing Marcel's convention", a citation that was both inaccurate and pointless: the team does not know Marcel, it is not the package's consumer, and the decision follows from the domain. The **decision is unchanged**; only its rationale is corrected.
 
-## Contexte
+## Context
 
-Le package doit être structuré avant d'écrire du code.
+The package must be structured before any code is written.
 
-**Le domaine impose l'architecture.** Presque tout ce que le package expose existe en plusieurs implémentations interchangeables derrière un contrat stable :
+**The domain dictates the architecture.** Almost everything the package exposes exists in several interchangeable implementations behind a stable contract:
 
-| Contrat | Implémentations prévues |
+| Contract | Planned implementations |
 |---|---|
-| `ILLMProvider` | Ollama, Gemini, Azure, externe, faux (tests), décorateur de métriques |
-| `IContextProvider` | fenêtre glissante (V1), mémoire auto-alimentée (V3) |
-| `ITool` | ReadFile, WriteFile, ListFiles, **plus tous ceux du consommateur** |
-| `IVoiceProvider` | Gemini, Azure, externe (V4) |
-| `ITokenCounter` | heuristique (V1), tokenizer réel (plus tard) |
-| `IMetricsCollector` | collecteur en mémoire |
+| `ILLMProvider` | Ollama, Gemini, Azure, external, fake (tests), metrics decorator |
+| `IContextProvider` | sliding window (V1), self-fed memory (V3) |
+| `ITool` | ReadFile, WriteFile, ListFiles, **plus all the consumer's own** |
+| `IVoiceProvider` | Gemini, Azure, external (V4) |
+| `ITokenCounter` | heuristic (V1), real tokenizer (later) |
+| `IMetricsCollector` | in-memory collector |
 
-Ce n'est pas une préférence de style : **c'est la définition de ports et adaptateurs.** Un package dont la promesse est « le repo consommateur choisit son provider et apporte ses outils » ne peut pas être structuré autrement sans trahir sa promesse.
+This is not a style preference: **it is the very definition of ports and adapters.** A package whose promise is "the consumer repo chooses its provider and brings its own tools" cannot be structured any other way without betraying that promise.
 
-**Le diagramme d'architecture de l'équipe est déjà hexagonal.** Ses quatre bandes — `Applicatif`, `Interface`, `Implémentation Locale`, `Implémentation Externe (à implémenter)` — sont exactement la séparation ports/adaptateurs, avec la bande externe réservée aux repos consommateurs. La décision précède donc cet ADR : celui-ci l'acte et en tire les conséquences de placement.
+**The team's architecture diagram is already hexagonal.** Its four bands (`Application`, `Interface`, `Local Implementation`, `External Implementation (to be implemented)`) are exactly the ports/adapters separation, with the external band reserved for consumer repos. The decision therefore predates this ADR: this one records it and draws the placement consequences from it.
 
-## Options évaluées
+## Options considered
 
-**A — Plat, `src/*.ts`.**
-Précédent maison : `NATHAN-jira-package`. Adapté à un client HTTP sans variantes. Ici, six contrats et une quinzaine d'implémentations finiraient mélangés dans un même dossier, et la frontière port/adaptateur — le cœur de la promesse du package — deviendrait invisible.
+**A: Flat, `src/*.ts`.**
+In-house precedent: `NATHAN-jira-package`. Suited to an HTTP client with no variants. Here, six contracts and some fifteen implementations would end up mixed in a single folder, and the port/adapter boundary (the heart of the package's promise) would become invisible.
 
-**B — Hexagonale, couches internes par domaine.**
-Rend la frontière explicite dans l'arborescence. Coût : des dossiers peu peuplés au démarrage.
+**B: Hexagonal, internal layers per domain.**
+Makes the boundary explicit in the file tree. Cost: sparsely populated folders at the start.
 
-**C — Intermédiaire : un dossier par domaine, fichiers plats dedans.**
-Moins de cérémonie. Mais la distinction port / adaptateur / fonction pure ne se lit plus dans les chemins, seulement dans les noms de fichiers.
+**C: Intermediate: one folder per domain, flat files inside.**
+Less ceremony. But the port / adapter / pure-function distinction can no longer be read in the paths, only in the file names.
 
-## Décision
+## Decision
 
 **Option B.**
 
 ```
 <domaine>/
-  models/            entités, types, enums — aucune dépendance runtime, aucun import SDK
-  interfaces/        ports : I*.ts — contrats seulement
-  services/          fonctions PURES — n'importe JAMAIS interfaces/
+  models/            entities, types, enums: no runtime dependency, no SDK import
+  interfaces/        ports: I*.ts: contracts only
+  services/          PURE functions: NEVER import interfaces/
   application/
     dtos/            Deps, Input, Result, Options
-    use-cases/       orchestration UNIQUEMENT
-  providers/<vendor>/  adaptateurs concrets par fournisseur
-  infrastructure/    autres adaptateurs concrets (I/O réel)
+    use-cases/       orchestration ONLY
+  providers/<vendor>/  concrete adapters per provider
+  infrastructure/    other concrete adapters (real I/O)
 ```
 
-### Règle de placement (arbre de décision par fichier)
+### Placement rule (per-file decision tree)
 
-1. Type/interface décrivant une donnée → `models/`
-2. Interface décrivant un port (`I<X>`) → `interfaces/`
-3. Fonction pure (ni disque, ni HTTP, ni SDK) → `services/`
-4. Fonction qui prend un port et orchestre → `application/use-cases/`
-5. Classe implémentant un port via de l'I/O réel → `providers/<vendor>/` ou `infrastructure/`
+1. Type/interface describing data → `models/`
+2. Interface describing a port (`I<X>`) → `interfaces/`
+3. Pure function (no disk, no HTTP, no SDK) → `services/`
+4. Function that takes a port and orchestrates → `application/use-cases/`
+5. Class implementing a port via real I/O → `providers/<vendor>/` or `infrastructure/`
 
-### `context/` est un domaine à part entière
+### `context/` is a domain in its own right
 
-Pas un sous-dossier de `agent/`. Fenêtre glissante et mémoire sont **deux providers d'un même port** — la V3 se dépose à côté de la V1 sans toucher à `AgenticLLM`. C'est la raison d'être du port ; l'enfouir sous `agent/` la masquerait.
+Not a subfolder of `agent/`. Sliding window and memory are **two providers of the same port**: V3 drops in next to V1 without touching `AgenticLLM`. That is the port's whole reason for being; burying it under `agent/` would hide it.
 
-### Topologie des providers
+### Provider topology
 
-Quand **plusieurs fournisseurs servent un seul contrat**, ils sont imbriqués par fournisseur : `<domaine>/providers/<vendor>/`. C'est le cas de tous les ports ici. La coexistence de plusieurs providers actifs est un besoin explicite — le harnais multi-modèles en dépend (`ADR-AGENT-0006`).
+When **several providers serve a single contract**, they are nested per provider: `<domaine>/providers/<vendor>/`. This is the case for all ports here. The coexistence of several active providers is an explicit need: the multi-model harness depends on it (`ADR-AGENT-0006`).
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- La promesse du package — « choisissez votre provider, apportez vos outils » — est lisible dans l'arborescence.
-- Ajouter un provider, c'est ajouter un dossier. Aucun fichier existant n'est touché.
-- Les fonctions pures (`services/`) sont testables sans aucun montage.
-- L'arborescence correspond au diagramme d'architecture, donc le code et la documentation ne divergent pas.
+- The package's promise ("choose your provider, bring your tools") is legible in the file tree.
+- Adding a provider means adding a folder. No existing file is touched.
+- The pure functions (`services/`) are testable without any setup.
+- The file tree matches the architecture diagram, so code and documentation do not diverge.
 
-**Négatives**
+**Negative**
 
-- **Des dossiers peu peuplés au démarrage** : `llm/interfaces/` ne contient qu'un fichier en V1. C'est le prix de la lisibilité de la frontière, assumé.
-- Plus de fichiers à ouvrir pour suivre un appel de bout en bout.
-- Un contributeur qui découvre le package doit lire la règle de placement avant d'ajouter un fichier. D'où sa présence dans `CLAUDE.md`.
+- **Sparsely populated folders at the start**: `llm/interfaces/` contains only one file in V1. That is the price of a legible boundary, and it is accepted.
+- More files to open to follow a call end to end.
+- A contributor new to the package must read the placement rule before adding a file. Hence its presence in `CLAUDE.md`.
 
-## Sur les références externes
+## On external references
 
-`C:\Marcel` et `C:\Meastro` sont des **exemples du même patron**, utiles pour voir à quoi il ressemble en pratique et pour repérer ses pièges. Ils ne sont pas l'origine de cette décision, et ils n'ont autorité sur rien :
+`C:\Marcel` and `C:\Meastro` are **examples of the same pattern**, useful for seeing what it looks like in practice and for spotting its pitfalls. They are not the origin of this decision, and they have authority over nothing:
 
-- Marcel est une application Next.js privée, jamais publiée, sans boucle agentique ni appel d'outils, et **ce n'est pas le consommateur de ce package**. Il n'expose aucune API publique — il ne peut donc rien dire sur la conception d'API (voir `ADR-AGENT-0009`, où cette confusion a été corrigée).
-- Meastro est un backend C# dont le modèle d'exécution d'outils a été analysé pour ses **contre-exemples** (`ADR-AGENT-0004`).
+- Marcel is a private Next.js application, never published, with no agentic loop and no tool calls, and **it is not this package's consumer**. It exposes no public API, so it can say nothing about API design (see `ADR-AGENT-0009`, where this confusion was corrected).
+- Meastro is a C# backend whose tool-execution model was analyzed for its **counter-examples** (`ADR-AGENT-0004`).
 
-Le consommateur réel est **l'IDE accessible de NATHAN**, construit dans `PMC/`. C'est lui, et lui seul, qui arbitrera si cette structure tient à l'usage.
+The real consumer is **NATHAN's accessible IDE**, built in `PMC/`. It, and it alone, will decide whether this structure holds up in practice.
 
-Ce qui reste retenu de Marcel est une **observation datée**, pas une convention : le champ `feature: string` de `src/llm/models/index.ts:62`, dont l'union réelle vivait en commentaire et a dérivé en quelques mois dans du code de production. D'où la règle : *si une clé est une chaîne, elle doit être typée.*
+What remains retained from Marcel is a **dated observation**, not a convention: the `feature: string` field in `src/llm/models/index.ts:62`, whose real union lived in a comment and drifted within a few months in production code. Hence the rule: *if a key is a string, it must be typed.*

@@ -1,50 +1,50 @@
-# Décisions d'architecture — nathan-agent-core
+# Architecture decisions: nathan-agent-core
 
-Registre des décisions de conception du package. Format imposé par la gouvernance du projet (`ADR-0007`, `NATHAN-console/docs/decisions/`) : statut, date, décideurs, contexte, options évaluées, décision, conséquences.
+Registry of the package's design decisions. Format imposed by project governance (`ADR-0007`, `NATHAN-console/docs/decisions/`): status, date, deciders, context, options considered, decision, consequences.
 
-**Un ADR est immuable après acceptation.** Pour revenir sur une décision, écrire un nouvel ADR et marquer l'ancien « Remplacé par ADR-AGENT-XXXX ».
+**An ADR is immutable once accepted.** To revisit a decision, write a new ADR and mark the old one "Replaced by ADR-AGENT-XXXX".
 
-## Numérotation
+## Numbering
 
-Préfixe `ADR-AGENT-` volontaire. Les ADR au niveau projet (`ADR-0001` à `ADR-0007`) vivent dans `NATHAN-console/docs/decisions/` et sont référencés partout dans `PMC/CONTEXT-AGENT.md` ; une série locale non préfixée entrerait en collision avec eux.
+The `ADR-AGENT-` prefix is deliberate. The project-level ADRs (`ADR-0001` to `ADR-0007`) live in `NATHAN-console/docs/decisions/` and are referenced throughout `PMC/CONTEXT-AGENT.md`; a local, unprefixed series would collide with them.
 
-Portée de cette série : le package `@a-world-felt/nathan-agent-core` uniquement.
+Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 
-## Registre
+## Registry
 
-| # | Décision | Statut | Date |
+| # | Decision | Status | Date |
 |---|---|---|---|
-| [ADR-AGENT-0001](ADR-AGENT-0001-architecture-hexagonale-use-cases-fonctions.md) | Architecture hexagonale | ✅ Accepté — complété par 0009 | 2026-07-21 |
-| [ADR-AGENT-0002](ADR-AGENT-0002-trois-points-entree-outils-a-la-carte.md) | Trois points d'entrée, outils à la carte | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0003](ADR-AGENT-0003-terminaison-boucle-machine-etats.md) | Terminaison par absence d'appel d'outil, machine à états suspendable | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0004](ADR-AGENT-0004-isolation-politique-execution.md) | Isolation : politique et exécution, deux axes composables | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0005](ADR-AGENT-0005-agents-typescript-versioning-git.md) | Agents déclarés en TypeScript, versioning par git | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0006](ADR-AGENT-0006-harnais-simulateur-agnostique.md) | Harnais : simulateur à état, agnostique du lanceur | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0007](ADR-AGENT-0007-metriques-decorateur-portee-instance.md) | Métriques par décorateur, portée par instance | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0008](ADR-AGENT-0008-comptage-jetons-derriere-un-port.md) | Comptage de jetons derrière un port | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md) | Classes pour l'API publique, fonctions pures à l'intérieur | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0010](ADR-AGENT-0010-pas-de-table-de-substitution.md) | Pas de table de substitution d'outils | ✅ Accepté | 2026-07-21 |
-| [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md) | Budget et atterrissage gracieux plutôt que coupure sèche | ✅ Accepté | 2026-07-21 |
+| [ADR-AGENT-0001](ADR-AGENT-0001-architecture-hexagonale-use-cases-fonctions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 | 2026-07-21 |
+| [ADR-AGENT-0002](ADR-AGENT-0002-trois-points-entree-outils-a-la-carte.md) | Three entry points, opt-in tools | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0003](ADR-AGENT-0003-terminaison-boucle-machine-etats.md) | Termination by absence of tool call, suspendable state machine | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0004](ADR-AGENT-0004-isolation-politique-execution.md) | Isolation: policy and execution, two composable axes | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0005](ADR-AGENT-0005-agents-typescript-versioning-git.md) | Agents declared in TypeScript, versioning via git | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0006](ADR-AGENT-0006-harnais-simulateur-agnostique.md) | Harness: stateful simulator, runner-agnostic | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0007](ADR-AGENT-0007-metriques-decorateur-portee-instance.md) | Metrics via decorator, per-instance scope | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0008](ADR-AGENT-0008-comptage-jetons-derriere-un-port.md) | Token counting behind a port | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md) | Classes for the public API, pure functions inside | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0010](ADR-AGENT-0010-pas-de-table-de-substitution.md) | No tool substitution table | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md) | Budget and graceful landing rather than a hard cutoff | ✅ Accepted | 2026-07-21 |
 
-## Décisions à venir
+## Upcoming decisions
 
-| Sujet | Quand |
+| Topic | When |
 |---|---|
-| Provider de la V2 (qualité d'appel d'outils / coût au jeton / latence) | avant la PR du 2ᵉ provider |
-| Implémentation réelle de `ITokenCounter` (famille de modèles) | quand l'heuristique montrera ses limites |
-| Exécution en container | pas avant qu'un consommateur expose un shell |
-| Approbation utilisateur avant écriture | quand le repo IDE en aura besoin |
+| V2 provider (tool-call quality / cost per token / latency) | before the 2nd provider's PR |
+| Real `ITokenCounter` implementation (model family) | when the heuristic shows its limits |
+| Execution in a container | not before a consumer exposes a shell |
+| User approval before writing | when the IDE repo needs it |
 
 ## Sources
 
-**La source qui fait autorité est le diagramme d'architecture de l'équipe** — `docs/schema/DiagrammeClasseAI.drawio`, et sa version à jour `DiagrammeClasse-agent-core.drawio`. Ses noms de classes et ses quatre bandes sont le vocabulaire de référence.
+**The authoritative source is the team's architecture diagram**: `docs/schema/DiagrammeClasseAI.drawio`, and its up-to-date version `DiagrammeClasse-agent-core.drawio`. Its class names and its four bands are the reference vocabulary.
 
-Le consommateur réel est **l'IDE accessible de NATHAN**, construit dans `PMC/`. C'est lui qui arbitrera à l'usage.
+The real consumer is **NATHAN's accessible IDE**, built in `PMC/`. It is the one that will decide in practice.
 
-Les repos voisins ne sont **ni des références ni des autorités** — l'équipe ne les connaît pas, et aucun n'est le consommateur du package. Ils ont servi de matière d'analyse, citée comme preuve datée :
+The neighboring repos are **neither references nor authorities**: the team does not know them, and none is the package's consumer. They served as analysis material, cited as dated evidence:
 
-| Repo | Ce qui en a été tiré | Ce qu'il ne peut pas trancher |
+| Repo | What was drawn from it | What it cannot settle |
 |---|---|---|
-| `C:\Marcel` | le champ `feature: string` qui a dérivé en production → « une clé chaîne doit être typée » | la conception d'API — il n'en expose aucune (`ADR-AGENT-0009`) |
-| `C:\Meastro` | contre-exemples d'exécution d'outils et de permissions (`ADR-AGENT-0004`) | rien d'autre : « en fait trop », c'est la raison de refaire |
-| `NATHAN-jira-package` | conventions de packaging (scope, registre, ESM, build `tsc`) | la structure interne — il est plat, sans variantes à absorber |
+| `C:\Marcel` | the `feature: string` field that drifted in production → "a string key must be typed" | API design: it exposes none (`ADR-AGENT-0009`) |
+| `C:\Meastro` | tool-execution and permission counter-examples (`ADR-AGENT-0004`) | nothing else: "does too much" is the reason to redo it |
+| `NATHAN-jira-package` | packaging conventions (scope, registry, ESM, `tsc` build) | internal structure: it is flat, with no variants to absorb |

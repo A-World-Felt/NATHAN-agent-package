@@ -1,61 +1,61 @@
-# ADR-AGENT-0010 — Pas de table de substitution d'outils
+# ADR-AGENT-0010: No tool substitution table
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-Le harnais doit pouvoir présenter à l'agent des outils simulés au lieu des outils réels, **sans que l'agent puisse faire la différence** (`ADR-AGENT-0006`).
+The harness must be able to present the agent with simulated tools instead of the real ones, **without the agent being able to tell the difference** (`ADR-AGENT-0006`).
 
-Question posée : *« il y aurait soit une abstraction avant `ToolDispatcher`, soit après, car la puissance de notre architecture est que l'agent ne sait pas l'implémentation des tools. »*
+Question raised: *"there would be either an abstraction before `ToolDispatcher`, or after, since the power of our architecture is that the agent does not know the tools' implementation."*
 
-L'intuition venait de Meastro, qui possède exactement ce mécanisme : `_toolMapping` (`ToolDispatcherBlockExecutor.cs:62-73`), une table qui redirige les identifiants d'outils vers des blocs de capture. Le dispatcher substitue de façon transparente et conserve l'identifiant d'origine pour les assertions.
+The intuition came from Meastro, which has exactly this mechanism: `_toolMapping` (`ToolDispatcherBlockExecutor.cs:62-73`), a table that redirects tool identifiers to capture blocks. The dispatcher substitutes transparently and keeps the original identifier for assertions.
 
-## Pourquoi Meastro en a besoin, et pas nous
+## Why Meastro needs it, and we do not
 
-**Chez Meastro, un outil est un manifeste sur disque résolu par identifiant à l'exécution** (`*.tool.block.json`, découverts par `IBlockDiscoveryService`, résolus via `registry.Get(blockType)`). Il n'existe aucun moyen d'injecter une autre implémentation : le dispatcher va chercher l'outil par son nom. La seule façon de substituer est donc **une table de redirection au milieu**.
+**At Meastro, a tool is a manifest on disk resolved by identifier at runtime** (`*.tool.block.json`, discovered by `IBlockDiscoveryService`, resolved via `registry.Get(blockType)`). There is no way to inject another implementation: the dispatcher fetches the tool by its name. The only way to substitute is therefore **a redirection table in the middle**.
 
-**Chez nous, `ITool` est une interface et les outils sont passés en objets.** La substitution est déjà possible — et elle a lieu à la construction :
+**For us, `ITool` is an interface and tools are passed as objects.** Substitution is already possible, and it happens at construction:
 
 ```ts
 new AgenticLLM({ tools: [navigate, click] })   // production
-new AgenticLLM({ tools: app.tools })            // simulateur
+new AgenticLLM({ tools: app.tools })            // simulator
 ```
 
-**L'abstraction, c'est l'interface elle-même.** Il n'y a rien à ajouter ni avant ni après le `ToolDispatcher`.
+**The abstraction is the interface itself.** There is nothing to add before or after the `ToolDispatcher`.
 
-## Options évaluées
+## Options evaluated
 
-**A — Table de substitution dans le `ToolDispatcher`.**
-Calquée sur Meastro. Redirige `name → implémentation de remplacement` à l'exécution.
+**A: Substitution table in the `ToolDispatcher`.**
+Modeled on Meastro. Redirects `name → replacement implementation` at runtime.
 
-**B — Un second `ToolDispatcher` dédié au harnais.**
-Deux chemins de dispatch à maintenir, qui divergeront. Et le harnais ne testerait plus le dispatcher réel.
+**B: A second `ToolDispatcher` dedicated to the harness.**
+Two dispatch paths to maintain, which will diverge. And the harness would no longer test the real dispatcher.
 
-**C — Rien. La substitution se fait à la construction.**
+**C: Nothing. Substitution happens at construction.**
 
-## Décision
+## Decision
 
 **Option C.**
 
-Aucune table, aucune redirection, aucun registre par nom. Le harnais construit un `AgenticLLM` avec les outils du simulateur, exactement comme la production le construit avec les siens.
+No table, no redirection, no lookup by name. The harness builds an `AgenticLLM` with the simulator's tools, exactly as production builds it with its own.
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- **Zéro code.** La capacité recherchée est un effet de bord de l'injection de dépendances, pas une fonctionnalité à écrire.
-- **Le harnais teste le vrai dispatcher**, pas une variante de test. Un seul chemin de code entre le développement et la production.
-- **Aucune surface d'attaque ajoutée.** C'est le piège n°6 relevé chez Meastro : `_toolMapping` y est une simple variable de session, propagée entre sessions (`BlockRefHandler.cs:191`). Si un agent peut écrire des variables de session, il peut recâbler ses propres outils. Une table de redirection à l'exécution réimplémente l'injection de dépendances — en moins sûr.
-- Cohérent avec `ADR-AGENT-0005` : pas de recherche par nom, pas de clé `string` non typée.
+- **Zero code.** The capability sought is a side effect of dependency injection, not a feature to write.
+- **The harness tests the real dispatcher**, not a test variant. A single code path between development and production.
+- **No added attack surface.** This is trap no. 6 noted at Meastro: `_toolMapping` there is a plain session variable, propagated across sessions (`BlockRefHandler.cs:191`). If an agent can write session variables, it can rewire its own tools. A runtime redirection table reimplements dependency injection, less safely.
+- Consistent with `ADR-AGENT-0005`: no lookup by name, no untyped `string` key.
 
-**Négatives**
+**Negative**
 
-- Le consommateur doit **câbler explicitement** ses outils à chaque construction. C'est le prix de l'absence de magie, et c'est la même philosophie que « les outils sont à la carte » (`ADR-AGENT-0002`).
-- On perd la possibilité de substituer un outil *en cours d'exécution*. Aucun besoin identifié ; le jour où il s'en présente un, il faudra un ADR qui le remplace.
+- The consumer must **wire its tools explicitly** at each construction. That is the price of no magic, and it is the same philosophy as "tools are opt-in" (`ADR-AGENT-0002`).
+- We lose the ability to substitute a tool *mid-run*. No need identified; the day one comes up, it will take an ADR that supersedes this one.
 
-**Ce qui reste vrai de l'idée d'origine**
+**What stays true of the original idea**
 
-L'objectif — *l'agent ne sait pas quelle implémentation se cache derrière un outil* — est intégralement atteint. C'est le contrat `ITool` qui le garantit, pas un mécanisme de redirection. Voir la page 2 du diagramme `docs/schema/Architecture-agent-core.drawio`, qui en fait sa démonstration visuelle.
+The goal (*the agent does not know which implementation hides behind a tool*) is fully achieved. It is the `ITool` contract that guarantees it, not a redirection mechanism. See page 2 of the `docs/schema/Architecture-agent-core.drawio` diagram, which makes it its visual demonstration.
