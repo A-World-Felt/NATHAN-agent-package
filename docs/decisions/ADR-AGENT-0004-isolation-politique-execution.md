@@ -1,91 +1,91 @@
-# ADR-AGENT-0004 — Isolation : politique et exécution, deux axes composables
+# ADR-AGENT-0004: Isolation: policy and execution, two composable axes
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-L'intention initiale était de reprendre le modèle de Meastro (`C:\Meastro`), compris comme : *« cette instance tool est soit un container isolé, soit l'isolement est créé par une logique qui vérifie les permissions et vient faire l'isolation en vérifiant les commandes. »*
+The initial intent was to reuse Meastro's model (`C:\Meastro`), understood as: *"this tool instance is either an isolated container, or the isolation is created by logic that checks permissions and performs the isolation by checking commands."*
 
-**L'analyse du code de Meastro contredit cette lecture.** Les deux briques existent, mais elles ne sont pas reliées :
+**Analysis of Meastro's code contradicts this reading.** Both building blocks exist, but they are not connected:
 
-- `IContainerRuntime` est réel — `DockerContainerRuntime` lance le binaire `docker`. Mais ses seuls consommateurs sont un contrôleur REST et un service de cycle de vie d'environnement projet. **Aucun exécuteur de bloc, aucun point du chemin de dispatch d'outil ne le touche.**
-- L'outil shell réel (`ShellBlockExecutor.cs:105`) fait un `Process.Start` de `cmd.exe /c` ou `/bin/bash -c` **sur l'hôte**, sans container ni jail.
-- Le mot « container » dans le code (`ContainerSession`, `ContainerIsolationE2ETests`) désigne **une portée de permissions** dans un arbre de sessions, pas un container OS.
-- `WorkspaceIsolation` (réseaux Docker, limites CPU/RAM) est sérialisé et stocké — **rien ne l'applique**.
+- `IContainerRuntime` is real: `DockerContainerRuntime` launches the `docker` binary. But its only consumers are a REST controller and a project-environment lifecycle service. **No block executor, no point on the tool-dispatch path touches it.**
+- The real shell tool (`ShellBlockExecutor.cs:105`) does a `Process.Start` of `cmd.exe /c` or `/bin/bash -c` **on the host**, with no container and no jail.
+- The word "container" in the code (`ContainerSession`, `ContainerIsolationE2ETests`) denotes **a permission scope** in a session tree, not an OS container.
+- `WorkspaceIsolation` (Docker networks, CPU/RAM limits) is serialized and stored: **nothing enforces it**.
 
-Il n'y a qu'**un seul** mécanisme d'isolation d'outils chez Meastro : la porte de permissions. Et cette porte **ne valide aucun argument** : une fois `shell-execute` autorisé, le modèle passe n'importe quelle chaîne de commande.
+There is only **one** tool-isolation mechanism in Meastro: the permission gate. And that gate **validates no argument**: once `shell-execute` is authorized, the model passes any command string it likes.
 
-> Autoriser un outil ≠ le contraindre. Des permissions grossières au niveau de l'outil, sur un outil `bash`, ce sont approximativement zéro permission.
+> Authorizing a tool ≠ constraining it. Coarse tool-level permissions, on a `bash` tool, are approximately zero permissions.
 
-Le modèle « isolation par vérification des commandes » n'existe donc nulle part. Il serait à inventer, pas à copier.
+The "isolation by command checking" model therefore exists nowhere. It would have to be invented, not copied.
 
-## Le raisonnement de fond
+## The underlying reasoning
 
-« Container » et « permissions » ne sont pas deux modes d'une même chose. Ce sont **deux dimensions indépendantes** :
+"Container" and "permissions" are not two modes of the same thing. They are **two independent dimensions**:
 
-| Axe | Question | Réponses |
+| Axis | Question | Answers |
 |---|---|---|
-| **Politique** | l'appel est-il autorisé ? | tout permis · allowlist · demander |
-| **Exécution** | où le code tourne-t-il ? | en process · sous-process · container · simulateur |
+| **Policy** | is the call authorized? | allow all · allowlist · ask |
+| **Execution** | where does the code run? | in-process · subprocess · container · simulator |
 
-Les traiter comme deux implémentations sœurs d'une même interface interdit de les **combiner** — or c'est ce qu'on veut. Un container sans politique laisse l'agent tout détruire à l'intérieur, volumes montés compris. Une politique sans container suffit dans beaucoup de cas.
+Treating them as two sibling implementations of a single interface makes it impossible to **combine** them, which is exactly what we want. A container with no policy lets the agent destroy everything inside, mounted volumes included. A policy with no container is enough in many cases.
 
-Meastro démontre le coût de la confusion par l'exemple négatif : un vocabulaire qui ment sur ce que fait le code.
+Meastro demonstrates the cost of the confusion by negative example: a vocabulary that lies about what the code does.
 
-## Options évaluées
+## Options considered
 
-**A — Deux implémentations sœurs d'un `IToolExecutor`.**
-La lecture initiale de Meastro. Empêche de composer ; reproduit l'ambiguïté de vocabulaire.
+**A: Two sibling implementations of an `IToolExecutor`.**
+The initial reading of Meastro. Prevents composition; reproduces the vocabulary ambiguity.
 
-**B — Chaîne de décorateurs pour la politique, choix exclusif pour l'exécution.**
-`dispatch = record(authorize(execute))`. La politique et l'observation sont des étages composables ; seule l'exécution est un choix.
+**B: A decorator chain for policy, an exclusive choice for execution.**
+`dispatch = record(authorize(execute))`. Policy and observation are composable stages; only execution is a choice.
 
-**C — Rien du tout en V1 : contraintes portées par l'outil.**
-Un `WriteFile` construit avec un répertoire racine, qui refuse d'en sortir. Dix lignes, aucun cadre.
+**C: Nothing at all in V1: constraints borne by the tool.**
+A `WriteFile` built with a root directory that refuses to leave it. Ten lines, no framework.
 
-## Décision
+## Decision
 
-**Option B comme forme cible, option C pour la V1.**
+**Option B as the target shape, option C for V1.**
 
-La V1 ne construit **aucune couche de permissions**. Les contraintes sont portées par les outils eux-mêmes. Justification : contrainte explicite de l'équipe — « il ne faut pas faire de overhead, ça doit rester maintenable », et « Meastro en fait trop, c'est pour ça qu'on le refait ».
+V1 builds **no permission layer**. Constraints are borne by the tools themselves. Rationale: an explicit team constraint: "no overhead, it must stay maintainable", and "Meastro does too much, that's why we're redoing it".
 
-Quand une politique deviendra nécessaire, elle prendra la forme d'un décorateur dans la chaîne, jamais d'une implémentation sœur de l'exécution.
+When a policy becomes necessary, it will take the form of a decorator in the chain, never a sibling implementation of execution.
 
-**Vocabulaire imposé** : un mot par concept. `scope` pour les permissions. `sandbox` uniquement si quelque chose confine réellement un processus.
+**Mandated vocabulary**: one word per concept. `scope` for permissions. `sandbox` only if something actually confines a process.
 
-## Avertissement de sécurité — à conserver dans la documentation publique
+## Security warning: to keep in the public documentation
 
-**La vérification de commandes n'est pas une frontière de sécurité.** Inspecter les arguments protège contre l'*accident* — un agent qui se trompe de chemin. Pas contre l'*adversaire* : avec un LLM dans la boucle, l'entrée est potentiellement adversariale. Une injection de prompt via un fichier lu peut produire des appels conçus pour contourner la validation — traversée de chemin, liens symboliques, encodage.
+**Command checking is not a security boundary.** Inspecting arguments protects against the *accident*: an agent that gets a path wrong. Not against the *adversary*: with an LLM in the loop, the input is potentially adversarial. A prompt injection via a read file can produce calls designed to bypass validation: path traversal, symbolic links, encoding.
 
-**Seul un container est une frontière de sécurité.** Si le mode « politique » est un jour livré, la documentation doit dire explicitement qu'il s'agit d'un garde-fou d'ergonomie, sinon quelqu'un le déploiera en croyant être protégé.
+**Only a container is a security boundary.** If the "policy" mode is ever shipped, the documentation must state explicitly that it is an ergonomic guardrail, otherwise someone will deploy it believing they are protected.
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Aucun overhead en V1.
-- La forme cible compose au lieu d'alterner : on pourra avoir politique **et** container.
-- L'observabilité (`record`) se branche dans la même chaîne — un seul concept pour deux besoins.
-- Le même patron que le décorateur de métriques côté LLM (`ADR-AGENT-0007`) : une seule idée sur les deux coutures du système.
+- No overhead in V1.
+- The target shape composes instead of alternating: we will be able to have policy **and** container.
+- Observability (`record`) plugs into the same chain: one concept for two needs.
+- The same pattern as the metrics decorator on the LLM side (`ADR-AGENT-0007`): a single idea on both seams of the system.
 
-**Négatives**
+**Negative**
 
-- Il faudra résister à la tentation d'ajouter un cadre de permissions générique avant qu'un consommateur ne l'exige.
-- Les contraintes portées par l'outil se répètent d'un outil à l'autre. Acceptable tant qu'ils sont peu nombreux.
+- We will have to resist the temptation to add a generic permissions framework before a consumer requires it.
+- Tool-borne constraints repeat from one tool to the next. Acceptable as long as they are few.
 
-## Ce qui est retenu de Meastro malgré tout
+## What is retained from Meastro nonetheless
 
-1. **Ne présenter au modèle que les outils autorisés** (`ToolSchemaGenerator.cs:56`). Un outil refusé n'est jamais annoncé — toute une classe d'échecs disparaît.
-2. **La substitution transparente d'outils** pour les mocks (`_toolMapping`), vérifiée **après** la politique donc inexploitable pour s'échapper. Voir `ADR-AGENT-0006`.
-3. **Les permissions qui ne peuvent que se restreindre** en descendant une chaîne.
-4. **Le coût qui remonte l'arbre des appels imbriqués.** Voir `ADR-AGENT-0007`.
+1. **Present the model only the authorized tools** (`ToolSchemaGenerator.cs:56`). A denied tool is never announced: a whole class of failures disappears.
+2. **Transparent tool substitution** for mocks (`_toolMapping`), checked **after** the policy and therefore unusable for escaping. See `ADR-AGENT-0006`.
+3. **Permissions that can only narrow** as one descends a chain.
+4. **Cost that bubbles up the tree of nested calls.** See `ADR-AGENT-0007`.
 
-## Pièges relevés chez Meastro, à ne pas reproduire
+## Pitfalls found in Meastro, not to be reproduced
 
-- **Politique non typée dans un sac partagé** (`context.Variables["_permissions_allowedBlocks"]`, avec cast). Si la valeur transite par une sérialisation JSON, le cast échoue et toute la couche de refus est sautée **sans erreur**. En TypeScript ce serait pire. La politique se passe en objet typé explicite.
-- **Deux points d'application aux sémantiques opposées** : la porte d'outils échoue en fermé, `FileAccessChecker` échoue en ouvert. Un seul point, et une politique malformée doit être une erreur fatale au démarrage.
-- **Normalisation avant vérification** : `bash` est réécrit en `shell-execute` *avant* la consultation des permissions, donc une règle `Deny("bash")` ne matche jamais, silencieusement.
-- **`RequiresApproval` qui ne demande rien** et renvoie une erreur au modèle. Voir `ADR-AGENT-0003` : chez nous, `step()` permettra de l'implémenter réellement.
+- **Untyped policy in a shared bag** (`context.Variables["_permissions_allowedBlocks"]`, with a cast). If the value passes through JSON serialization, the cast fails and the entire deny layer is skipped **with no error**. In TypeScript it would be worse. Policy is passed as an explicit typed object.
+- **Two enforcement points with opposite semantics**: the tool gate fails closed, `FileAccessChecker` fails open. A single point, and a malformed policy must be a fatal error at startup.
+- **Normalization before checking**: `bash` is rewritten to `shell-execute` *before* permissions are consulted, so a `Deny("bash")` rule never matches, silently.
+- **`RequiresApproval` that asks for nothing** and returns an error to the model. See `ADR-AGENT-0003`: on our side, `step()` will make it genuinely implementable.

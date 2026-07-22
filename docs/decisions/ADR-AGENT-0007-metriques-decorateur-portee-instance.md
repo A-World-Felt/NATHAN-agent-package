@@ -1,98 +1,98 @@
-# ADR-AGENT-0007 — Métriques par décorateur, portée par instance
+# ADR-AGENT-0007: Metrics via a decorator, per-instance scope
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-Besoin formulé : *« une instance entre llmProvider qui relaie les messages mais s'occupe de passer les métriques à l'instance qui s'occupe du monitoring des coûts, tokens, etc. »*, avec une API `start monitoring` / `read` / `stop` permettant d'accumuler dans un objet donné puis de cesser d'y accumuler.
+The stated need: *"an instance sitting in front of the llmProvider that relays the messages but takes care of passing the metrics to the instance in charge of monitoring cost, tokens, etc."*, with a `start monitoring` / `read` / `stop` API that accumulates into a given object and then stops accumulating into it.
 
-Objectif final : comparer des modèles sur coût, durée et réussite (`ADR-AGENT-0006`).
+End goal: compare models on cost, duration and success (`ADR-AGENT-0006`).
 
-## Métriques ≠ tokenizer
+## Metrics ≠ tokenizer
 
-Deux besoins souvent confondus :
+Two needs that are often conflated:
 
-- **Comptabiliser ce qui a été consommé** — le provider le déclare lui-même. Ollama renvoie `prompt_eval_count` / `eval_count` ; OpenAI renvoie `usage.prompt_tokens` / `completion_tokens`. Rien à compter localement : le fournisseur est la source de vérité pour la facturation.
-- **Décider ce qui rentre dans la fenêtre avant d'envoyer** — c'est un autre métier, traité par `ADR-AGENT-0008`.
+- **Accounting for what was consumed**: the provider declares it itself. Ollama returns `prompt_eval_count` / `eval_count`; OpenAI returns `usage.prompt_tokens` / `completion_tokens`. Nothing to count locally: the provider is the source of truth for billing.
+- **Deciding what fits in the window before sending**: that is a different job, handled by `ADR-AGENT-0008`.
 
-Le décorateur de métriques n'a donc besoin d'aucun tokenizer.
+The metrics decorator therefore needs no tokenizer at all.
 
-> **À vérifier contre le vrai endpoint Ollama avant de coder.** Les noms de champs ci-dessus ne doivent pas être repris de mémoire (règle anti-hallucination n°2 de `CLAUDE.md`).
+> **To be verified against the real Ollama endpoint before coding.** The field names above must not be taken from memory (anti-hallucination rule no. 2 in `CLAUDE.md`).
 
-## Options évaluées
+## Options evaluated
 
-**A — Chaque appelant lit `response.usage` et agrège lui-même.** Aucune infrastructure, mais l'agrégation est réécrite partout et rien ne remonte à travers les appels imbriqués.
+**A: Each caller reads `response.usage` and aggregates on its own.** No infrastructure, but the aggregation gets rewritten everywhere and nothing propagates across nested calls.
 
-**B — Décorateur sur `ILLMProvider`, avec portée par `start`/`stop`.** La proposition initiale.
+**B: Decorator over `ILLMProvider`, scoped by `start`/`stop`.** The initial proposal.
 
-**C — Décorateur sur `ILLMProvider`, avec portée par instance du collecteur.** Même mécanisme de relais, mais la durée de vie de l'objet *est* la portée.
+**C: Decorator over `ILLMProvider`, scoped by the collector's instance.** Same relay mechanism, but the object's lifetime *is* the scope.
 
-## Décision
+## Decision
 
 **Option C.**
 
 ```ts
 const metrics  = createMetricsCollector();
-const provider = withMetrics(ollama, metrics);   // implémente ILLMProvider
+const provider = withMetrics(ollama, metrics);   // implements ILLMProvider
 
 const r = await runAgent(...);
 
 metrics.total();   // { calls, tokensIn, tokensOut, durationMs }
 ```
 
-`withMetrics` implémente `ILLMProvider` et délègue. Ni l'agent ni le provider ne savent qu'il est là.
+`withMetrics` implements `ILLMProvider` and delegates. Neither the agent nor the provider knows it is there.
 
-### Pourquoi pas `start` / `stop`
+### Why not `start` / `stop`
 
-L'accumulation pilotée dans le temps est de l'**état ambiant**, avec deux modes de panne certains :
+Time-driven accumulation is **ambient state**, with two certain failure modes:
 
-- **Les tests s'exécutent en parallèle.** Deux scénarios simultanés accumulent dans le même objet. Les métriques deviennent du bruit, sans erreur visible.
-- **Un `stop()` oublié** fait fuiter les métriques d'un test dans le suivant.
+- **Tests run in parallel.** Two concurrent scenarios accumulate into the same object. The metrics become noise, with no visible error.
+- **A forgotten `stop()`** leaks one test's metrics into the next.
 
-C'est exactement le piège relevé chez Meastro : de l'état sensible qui voyage dans un sac partagé ambiant (`_toolMapping`, `context.Variables[...]`).
+This is exactly the trap noted at Meastro: sensitive state travelling in a shared ambient bag (`_toolMapping`, `context.Variables[...]`).
 
-Avec la portée par instance, chaque exécution fabrique son collecteur : parallèle-sûr par construction, et pour l'éval multi-modèles, un collecteur par exécution donne naturellement une ligne par run.
+With per-instance scope, each run builds its own collector: parallel-safe by construction, and for the multi-model eval, one collector per run naturally yields one row per run.
 
-### Les tarifs ne vivent pas dans le package
+### Rates do not live in the package
 
-Les prix changent ; en dur, ils périment le package et forcent une republication.
+Prices change; hardcoded, they expire the package and force a republish.
 
 ```ts
 metrics.total({
   rates: {
-    "qwen2.5-coder": null,                      // local — non facturé
-    "gpt-4o-mini":   { in: 0.15, out: 0.60 },   // $ / M jetons
+    "qwen2.5-coder": null,                      // local: not billed
+    "gpt-4o-mini":   { in: 0.15, out: 0.60 },   // $ / M tokens
   },
 });
 ```
 
-Le consommateur charge sa config comme il veut et passe l'objet ; **le package ne lit aucun fichier** — sinon le point d'entrée `.` traînerait `fs` (`ADR-AGENT-0002`). Le package fait l'arithmétique et l'agrégation.
+The consumer loads its config however it likes and passes the object; **the package reads no file**: otherwise the `.` entry point would drag `fs` behind it (`ADR-AGENT-0002`). The package does the arithmetic and the aggregation.
 
-La clé de jointure est `ILLMProvider.model`, déjà présent dans le diagramme d'origine.
+The join key is `ILLMProvider.model`, already present in the original diagram.
 
-### Trois règles
+### Three rules
 
-1. **Unités explicites.** Par jeton, par millier, par million ? C'est la première source d'erreur sur ce type de table. L'unité doit être dans le nom du type ou en commentaire obligatoire.
-2. **Absent ≠ zéro.** Un modèle local n'est pas gratuit, il est *non facturé* : il consomme du temps, de l'électricité, de la VRAM. Si Ollama sort à `0 $`, il gagne toutes les comparaisons de coût sans que ça veuille rien dire. Rapporter `null`, et laisser lire la colonne durée à côté.
-3. **Pas de score composite.** Meastro calcule une `FitnessScore` unique — `(P × S × W) / (C_norm × C_compute × C_hw)^λ`. Un λ à régler, et on ne sait plus si un modèle gagne parce qu'il réussit mieux ou parce qu'il coûte moins. Émettre les dimensions séparément : taux de réussite, coût, latence. L'arbitrage revient à l'humain.
+1. **Explicit units.** Per token, per thousand, per million? That is the first source of error with this kind of table. The unit must be in the type name or in a mandatory comment.
+2. **Absent ≠ zero.** A local model is not free, it is *not billed*: it consumes time, electricity, VRAM. If Ollama comes out at `$0`, it wins every cost comparison without that meaning anything. Report `null`, and let the duration column be read alongside it.
+3. **No composite score.** Meastro computes a single `FitnessScore`: `(P × S × W) / (C_norm × C_compute × C_hw)^λ`. One λ to tune, and you can no longer tell whether a model wins because it succeeds more often or because it costs less. Emit the dimensions separately: success rate, cost, latency. The trade-off belongs to the human.
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Aucun couplage : l'agent ignore le décorateur, le provider aussi.
-- `withMetrics` enveloppe **n'importe quel** `ILLMProvider`, y compris le faux — la mécanique de métriques se teste de façon déterministe, sans réseau.
-- Même patron que la chaîne `record → authorize → execute` côté outils (`ADR-AGENT-0004`) : un seul concept sur les deux coutures du système.
-- Le package ne périme pas quand les tarifs changent.
+- No coupling: the agent is unaware of the decorator, and so is the provider.
+- `withMetrics` wraps **any** `ILLMProvider`, including the fake one: the metrics machinery can be tested deterministically, with no network.
+- Same pattern as the `record → authorize → execute` chain on the tools side (`ADR-AGENT-0004`): a single concept on both seams of the system.
+- The package does not expire when rates change.
 
-**Négatives**
+**Negative**
 
-- Un décorateur de plus dans le câblage du consommateur.
-- Le coût ne devient informatif qu'avec un provider facturé : en V1 sur Ollama, la colonne vaudra `null` partout. La plomberie doit exister quand même.
+- One more decorator in the consumer's wiring.
+- Cost only becomes informative with a billed provider: in V1 on Ollama, the column will read `null` everywhere. The plumbing must exist anyway.
 
-**Ordre d'implémentation**
+**Implementation order**
 
-`LLMResponse.usage` est rempli par l'adaptateur **dès la PR2** — le rétro-ajouter dans chaque adaptateur plus tard coûte cher. Le collecteur et `withMetrics` arrivent en PR6, avec le harnais qui les consomme.
+`LLMResponse.usage` is filled by the adapter **as early as PR2**: retrofitting it into each adapter later is expensive. The collector and `withMetrics` arrive in PR6, together with the harness that consumes them.

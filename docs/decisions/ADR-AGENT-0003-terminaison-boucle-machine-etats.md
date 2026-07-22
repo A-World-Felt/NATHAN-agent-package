@@ -1,46 +1,46 @@
-# ADR-AGENT-0003 — Terminaison par absence d'appel d'outil, machine à états suspendable
+# ADR-AGENT-0003: Termination by absence of tool call, suspendable state machine
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
-- **Complété par** : [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md) — le bornage n'est plus une coupure sèche sur `maxIterations` mais un budget composite qui déclenche un **atterrissage gracieux**. `stopReason` devient `"completed" | "budget" | "stuck" | "error"`. La décision de terminaison ci-dessous (absence d'appel d'outil) est inchangée.
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
+- **Complemented by**: [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md): bounding is no longer a hard cutoff on `maxIterations` but a composite budget that triggers a **graceful landing**. `stopReason` becomes `"completed" | "budget" | "stuck" | "error"`. The termination decision below (absence of tool call) is unchanged.
 
-## Contexte
+## Context
 
-Le diagramme de classes d'origine décrit `AgenticLLM` avec une méthode privée `is_done(AgenticLLMResponse)`, accompagnée de cette annotation :
+The original class diagram describes `AgenticLLM` with a private method `is_done(AgenticLLMResponse)`, accompanied by this annotation:
 
-> *« Look to remove isDone. When the agent is finished, it calls the tool isDone. Every tools put the agent in waiting status. IsDone does the same except it's the user response that wakes him up. »*
+> *"Look to remove isDone. When the agent is finished, it calls the tool isDone. Every tools put the agent in waiting status. IsDone does the same except it's the user response that wakes him up."*
 
-L'annotation contient deux idées distinctes qu'il faut séparer : **comment l'agent signale qu'il a fini**, et **le fait que tout appel d'outil suspend l'agent**.
+The annotation contains two distinct ideas that must be separated: **how the agent signals it is finished**, and **the fact that every tool call suspends the agent**.
 
-## Options évaluées
+## Options considered
 
-**A — Garder `isDone` comme outil explicite.**
-Le modèle appelle `isDone` pour signaler la fin. Mode de panne gratuit : s'il oublie de l'appeler, la boucle tourne jusqu'à `maxIterations`. Consomme aussi une place dans la liste d'outils présentée au modèle.
+**A: Keep `isDone` as an explicit tool.**
+The model calls `isDone` to signal the end. A free failure mode: if it forgets to call it, the loop runs until `maxIterations`. It also uses up a slot in the tool list presented to the model.
 
-**B — Terminaison native : l'absence d'appel d'outil est le signal.**
-Tous les protocoles d'appel d'outils fonctionnent ainsi — le modèle renvoie du contenu sans `toolCalls`, c'est terminé. Rien à apprendre au modèle.
+**B: Native termination: the absence of a tool call is the signal.**
+All tool-call protocols work this way: the model returns content with no `toolCalls`, and it is done. Nothing to teach the model.
 
-**C — Les deux, avec `isDone` optionnel.**
-Deux chemins de terminaison à tester et à maintenir, pour aucun gain.
+**C: Both, with `isDone` optional.**
+Two termination paths to test and maintain, for no gain.
 
-## Décision
+## Decision
 
-**Option B pour la terminaison, et l'idée de suspension est conservée comme primitive.**
+**Option B for termination, and the suspension idea is kept as a primitive.**
 
-`isDone` est supprimé. `LLMResponse.toolCalls` vide ⇒ `stopReason: "completed"`.
+`isDone` is removed. An empty `LLMResponse.toolCalls` ⇒ `stopReason: "completed"`.
 
-Le cas « j'ai besoin de l'utilisateur », que l'annotation distinguait, se règle par la règle générale du package (`ADR-AGENT-0002`) : **c'est un outil du consommateur**. Un repo qui veut séparer « fini » de « j'ai une question » enregistre son propre `ask_user`. Le cœur, lui, s'arrête quand il n'y a plus d'appel d'outil.
+The "I need the user" case, which the annotation distinguished, is handled by the package's general rule (`ADR-AGENT-0002`): **it is a consumer tool**. A repo that wants to separate "done" from "I have a question" registers its own `ask_user`. The core itself stops when there is no more tool call.
 
-La suspension devient la primitive, et la boucle du sucre par-dessus :
+Suspension becomes the primitive, and the loop is sugar on top:
 
 ```ts
-step(state: AgentState): Promise<AgentState>        // suspend sur appel d'outil
-makeRunAgent(deps)(input): Promise<AgentResult>     // enroule step() jusqu'à l'arrêt
+step(state: AgentState): Promise<AgentState>        // suspends on a tool call
+makeRunAgent(deps)(input): Promise<AgentResult>     // wraps step() until it stops
 ```
 
-Le résultat dit pourquoi il s'est arrêté :
+The result says why it stopped:
 
 ```ts
 export type AgentResult = {
@@ -51,21 +51,21 @@ export type AgentResult = {
 };
 ```
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Un mode de panne en moins : plus de « le modèle a oublié d'appeler `isDone` ».
-- Une place de moins dans la liste d'outils présentée au modèle.
-- **Le harnais contrôle l'exécution des outils au lieu de la subir** — c'est `step()` qui rend le simulateur possible (`ADR-AGENT-0006`).
-- L'approbation utilisateur avant une opération risquée devient implémentable pour de vrai plus tard : la plomberie de suspension existe déjà. C'est exactement ce qui manque à Meastro, dont le niveau `RequiresApproval` ne demande rien et se contente de renvoyer une erreur au modèle.
-- `stopReason` donne au harnais un critère d'assertion net (« l'agent s'est-il arrêté au bon endroit »).
+- One fewer failure mode: no more "the model forgot to call `isDone`".
+- One fewer slot in the tool list presented to the model.
+- **The harness controls tool execution instead of being subjected to it**: it is `step()` that makes the simulator possible (`ADR-AGENT-0006`).
+- User approval before a risky operation becomes genuinely implementable later: the suspension plumbing already exists. This is exactly what Meastro lacks, whose `RequiresApproval` level asks for nothing and merely returns an error to the model.
+- `stopReason` gives the harness a clean assertion criterion ("did the agent stop in the right place").
 
-**Négatives**
+**Negative**
 
-- Un consommateur qui veut distinguer « terminé » de « en attente de l'utilisateur » doit écrire son propre outil. C'est voulu, mais ce n'est pas gratuit pour lui.
-- La primitive `step()` élargit l'API publique : deux niveaux d'entrée à documenter au lieu d'un.
+- A consumer that wants to distinguish "finished" from "waiting for the user" must write its own tool. This is intentional, but it is not free for them.
+- The `step()` primitive widens the public API: two entry levels to document instead of one.
 
-**À surveiller**
+**To watch**
 
-Un modèle qui ne supporte pas l'appel d'outils natif signalerait sa fin autrement. `ILLMProvider.supportsTools()` existe pour détecter ce cas ; le traitement associé n'est pas dans la V1.
+A model that does not support native tool calls would signal its end differently. `ILLMProvider.supportsTools()` exists to detect this case; the associated handling is not in V1.

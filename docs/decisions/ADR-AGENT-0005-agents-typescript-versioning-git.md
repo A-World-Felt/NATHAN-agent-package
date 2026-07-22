@@ -1,38 +1,38 @@
-# ADR-AGENT-0005 — Agents déclarés en TypeScript, versioning par git
+# ADR-AGENT-0005: Agents declared in TypeScript, versioning via git
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-Exigence formulée : « on pourrait enregistrer des agents génériques dans le package, mais c'est plus, mettons, pour une app qui inclut le package : les prompts/configs sont setupables dans un JSON, la personne pourrait commit "ok telle version est bonne" et faire des tests. »
+Stated requirement: "we could register generic agents in the package, but that's more, let's say, for an app that includes the package: the prompts/configs are set up in a JSON, the person could commit 'ok this version is good' and run tests."
 
-Le diagramme de classes ne contient rien de tel : `AgenticLLM` reçoit son prompt et ses outils en paramètres de construction. Il n'existe aucun objet « définition d'agent » indépendant de l'exécution.
+The class diagram contains nothing of the sort: `AgenticLLM` receives its prompt and its tools as construction parameters. There is no "agent definition" object independent of execution.
 
-Trois questions à trancher : **où vivent les définitions**, **sous quel format**, et **comment se fait le versioning**.
+Three questions to settle: **where the definitions live**, **in what format**, and **how versioning is done**.
 
-### Ce que l'analyse a montré
+### What the analysis showed
 
-- **Marcel n'a aucun versioning de prompts.** Recherche exhaustive : zéro occurrence de `PROMPT_VERSION`, `promptVersion`, `promptRegistry`, `getPrompt`. Aucune table `prompt` en base, aucune migration. Les prompts sont des littéraux interpolés dans des fonctions pures, un fichier par site d'appel, versionnés **par git uniquement**. Leurs propres notes traitent un changement de prompt comme « validate in a manual gate ».
-- **Marcel a tenté un registre nommé, et il a dérivé.** `src/llm/models/index.ts:62` :
+- **Marcel has no prompt versioning.** Exhaustive search: zero occurrences of `PROMPT_VERSION`, `promptVersion`, `promptRegistry`, `getPrompt`. No `prompt` table in the database, no migration. Prompts are literals interpolated in pure functions, one file per call site, versioned **by git only**. Their own notes treat a prompt change as "validate in a manual gate".
+- **Marcel attempted a named registry, and it drifted.** `src/llm/models/index.ts:62`:
   ```ts
   feature: string;  // 'generation' | 'replace' | 'chat' | 'coverage-check' | etc.
   ```
-  L'union réelle vit dans le commentaire. En quelques mois la liste documentée est devenue partiellement fictive : `coverage-check` n'existe pas en production comme `feature`.
+  The real union lives in the comment. Within a few months the documented list became partly fictitious: `coverage-check` does not exist in production as a `feature`.
 
-## Options évaluées
+## Options considered
 
-**A — Registre runtime avec recherche par nom.** `registry.get("navigateur")`. Reproduit exactement le mode de dérive observé chez Marcel si les clés sont des `string`.
+**A: Runtime registry with lookup by name.** `registry.get("navigateur")`. Reproduces exactly the drift mode observed in Marcel if the keys are `string`.
 
-**B — `defineAgent()` en TypeScript, agents exportés en `const`, importés statiquement.** Types gratuits, aucun code de validation à écrire, diff git lisible, aucune recherche par nom.
+**B: `defineAgent()` in TypeScript, agents exported as `const`, imported statically.** Free types, no validation code to write, legible git diff, no lookup by name.
 
-**C — Définitions en JSON/YAML chargées à l'exécution.** Un prompt change sans recompiler. Exige un schéma et du code de validation ; JSON n'accepte pas les commentaires et encaisse mal le texte long multi-ligne — or un prompt système *est* du texte long qu'on veut annoter.
+**C: Definitions in JSON/YAML loaded at runtime.** A prompt changes without recompiling. Requires a schema and validation code; JSON does not accept comments and copes poorly with long multi-line text, whereas a system prompt *is* long text that one wants to annotate.
 
-## Décision
+## Decision
 
-**Option B, marquée « pour le moment ».**
+**Option B, marked "for now".**
 
 ```ts
 export const navigateur = defineAgent({
@@ -42,39 +42,39 @@ export const navigateur = defineAgent({
 });
 ```
 
-`defineAgent()` est une fonction pure qui retourne un objet typé. **Aucun registre runtime, aucune clé `string` non typée.**
+`defineAgent()` is a pure function that returns a typed object. **No runtime registry, no untyped `string` key.**
 
-Critère qui a tranché entre B et C : *est-ce qu'un prompt doit pouvoir changer sans rebuild ?* Réponse actuelle : non.
+The criterion that decided between B and C: *does a prompt need to be able to change without a rebuild?* Current answer: no.
 
-`defineAgent()` étant une fonction, ajouter un chargeur JSON/YAML plus tard n'invalide rien de cette décision.
+Since `defineAgent()` is a function, adding a JSON/YAML loader later invalidates nothing in this decision.
 
-### Le versioning n'est pas construit
+### Versioning is not built
 
-Il n'y a **ni champ `version`, ni registre, ni base de données**. Un agent est un fichier TypeScript commité :
+There is **no `version` field, no registry, no database**. An agent is a committed TypeScript file:
 
-- la **version**, c'est git ;
-- « cette version est bonne », ce sont **les tests qui le prouvent**.
+- the **version** is git;
+- "this version is good" is **proven by the tests**.
 
-Ça élimine le problème des deux compteurs divergents : un champ `version` par agent aurait dérivé du `npm version` du package, et il aurait fallu décider lequel fait foi.
+This eliminates the two-diverging-counters problem: a per-agent `version` field would have drifted from the package's `npm version`, and one would have had to decide which is authoritative.
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Zéro code de validation de schéma à écrire et à maintenir.
-- L'autocomplétion et le typage fonctionnent sur les définitions d'agents.
-- Impossible de reproduire la dérive du `feature: string` de Marcel : il n'y a pas de clé texte.
-- Le versioning est gratuit et déjà outillé (git, blame, PR, revert).
+- Zero schema-validation code to write and maintain.
+- Autocompletion and typing work on the agent definitions.
+- Impossible to reproduce Marcel's `feature: string` drift: there is no text key.
+- Versioning is free and already tooled (git, blame, PR, revert).
 
-**Négatives**
+**Negative**
 
-- Changer un prompt exige de recompiler et republier le package — ou, pour un agent défini côté consommateur, de rebuilder son app.
-- Un utilisateur non développeur ne peut pas ajuster un prompt. Non bloquant : les agents sont écrits par l'équipe.
+- Changing a prompt requires recompiling and republishing the package, or, for an agent defined on the consumer side, rebuilding its app.
+- A non-developer user cannot adjust a prompt. Not blocking: the agents are written by the team.
 
-**Lien avec les autres décisions**
+**Link with the other decisions**
 
-Le versioning n'a d'intérêt que si l'on peut **mesurer** qu'une v2 de prompt bat la v1. Versioning et évaluation sont la même fonctionnalité vue sous deux angles — sans le harnais de `ADR-AGENT-0006`, un versioning ne serait que du changelog.
+Versioning is only worthwhile if one can **measure** that a v2 of a prompt beats v1. Versioning and evaluation are the same feature seen from two angles: without the harness of `ADR-AGENT-0006`, versioning would be nothing but a changelog.
 
-**Règle générale qui en découle, applicable partout dans le package**
+**General rule that follows, applicable everywhere in the package**
 
-> Si une clé est une chaîne, elle doit être typée. Le bon précédent est `Marcel/src/llm/providers/index.ts:25` — `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, fermé, typé, piloté par variable d'environnement.
+> If a key is a string, it must be typed. The good precedent is `Marcel/src/llm/providers/index.ts:25`: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed, typed, driven by an environment variable.

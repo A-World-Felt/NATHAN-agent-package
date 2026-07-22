@@ -1,31 +1,31 @@
-# ADR-AGENT-0008 — Comptage de jetons derrière un port
+# ADR-AGENT-0008: Token counting behind a port
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-`IContextProvider` expose `maxTokens`. La fenêtre glissante doit donc décider ce qui rentre — et pour ça, savoir ce que pèse un historique.
+`IContextProvider` exposes `maxTokens`. The sliding window must therefore decide what fits, and to do that, it must know what a history weighs.
 
-Position initiale retenue puis révisée : « compter des messages, pas des jetons, pour éviter la dépendance à un tokenizer ». L'objection de l'équipe est juste :
+Initial position, adopted then revised: "count messages, not tokens, to avoid a dependency on a tokenizer". The team's objection is fair:
 
-> **« 8 messages » ne veut pas dire la même chose pour un modèle à 8k et un modèle à 128k.**
+> **"8 messages" does not mean the same thing for an 8k model and a 128k model.**
 
-Or le package sert précisément à **comparer des modèles** (`ADR-AGENT-0006`). Tronquer au nombre de messages rend les comparaisons bancales : deux modèles ne reçoivent pas la même quantité réelle de contexte.
+Yet the package exists precisely to **compare models** (`ADR-AGENT-0006`). Truncating by message count makes the comparisons lopsided: two models do not receive the same actual amount of context.
 
-Mais un tokenizer exact est **spécifique au modèle** — `tiktoken` pour OpenAI, des variantes sentencepiece pour Llama et Mistral. Il n'existe pas de tokenizer universel, et chacun est une dépendance lourde (binaires wasm ou natifs). C'est exactement l'overhead que le projet refuse.
+But an exact tokenizer is **model-specific**: `tiktoken` for OpenAI, sentencepiece variants for Llama and Mistral. There is no universal tokenizer, and each one is a heavy dependency (wasm or native binaries). That is exactly the overhead the project refuses.
 
-## Options évaluées
+## Options evaluated
 
-**A — Compter les messages.** Zéro dépendance, mais fausse les comparaisons entre modèles.
+**A: Count messages.** Zero dependency, but it skews model-to-model comparisons.
 
-**B — Embarquer un tokenizer réel dès la V1.** Exact, mais lourd, et il en faut un par famille de modèles.
+**B: Embed a real tokenizer as of V1.** Exact, but heavy, and you need one per model family.
 
-**C — Un port, avec une implémentation heuristique en V1.** Le coût est différé sans que la porte se ferme.
+**C: A port, with a heuristic implementation in V1.** The cost is deferred without closing the door.
 
-## Décision
+## Decision
 
 **Option C.**
 
@@ -36,28 +36,28 @@ export interface ITokenCounter {
 }
 ```
 
-- **V1** — `HeuristicTokenCounter` : caractères ÷ 4, documenté comme approximatif.
-- **Plus tard** — une implémentation par famille de modèles, qui se branche sans toucher à `SlidingWindowContext`.
+- **V1**: `HeuristicTokenCounter`: characters ÷ 4, documented as approximate.
+- **Later**: an implementation per model family, plugging in without touching `SlidingWindowContext`.
 
-C'est la même logique que pour `ILLMProvider` et `IContextProvider` : ce qui varie selon le fournisseur passe derrière un port.
+This is the same logic as for `ILLMProvider` and `IContextProvider`: whatever varies by provider goes behind a port.
 
-### Calibration gratuite
+### Free calibration
 
-Le provider déclare après chaque appel combien de jetons l'historique a **réellement** pesé (`ADR-AGENT-0007`). L'erreur de l'heuristique est donc mesurable au lieu d'être devinée — et c'est ce qui dira quand il devient nécessaire de passer à un tokenizer réel, plutôt qu'une intuition.
+After each call, the provider declares how many tokens the history **actually** weighed (`ADR-AGENT-0007`). The heuristic's error is therefore measurable instead of guessed, and that is what will tell us when it becomes necessary to move to a real tokenizer, rather than an intuition.
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Aucune dépendance en V1.
-- La fenêtre glissante est écrite une fois ; changer de stratégie de comptage ne la touche pas.
-- L'imprécision est mesurable, donc la décision de passer à un vrai tokenizer sera prise sur des chiffres.
+- No dependency in V1.
+- The sliding window is written once; changing the counting strategy does not touch it.
+- The imprecision is measurable, so the decision to move to a real tokenizer will be made on numbers.
 
-**Négatives**
+**Negative**
 
-- L'heuristique caractères ÷ 4 est mauvaise sur du code et sur le français accentué — deux cas centraux pour NATHAN, dont l'agent écrit du MicroPython. Il faut donc s'attendre à devoir la remplacer, et prévoir une marge de sécurité sur `maxTokens` en attendant.
-- Un port de plus dans le câblage.
+- The characters ÷ 4 heuristic is poor on code and on accented French: two central cases for NATHAN, whose agent writes MicroPython. We must therefore expect to have to replace it, and keep a safety margin on `maxTokens` in the meantime.
+- One more port in the wiring.
 
-**Suivi**
+**Follow-up**
 
-À réévaluer quand la calibration montrera une erreur qui déborde la marge, ou dès qu'un provider facturé rendra le gaspillage de contexte coûteux.
+To be reassessed when calibration shows an error that exceeds the margin, or as soon as a billed provider makes wasted context expensive.

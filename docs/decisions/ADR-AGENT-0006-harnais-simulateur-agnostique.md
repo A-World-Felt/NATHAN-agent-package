@@ -1,44 +1,44 @@
-# ADR-AGENT-0006 — Harnais : simulateur à état, agnostique du lanceur
+# ADR-AGENT-0006: Harness: stateful simulator, runner-agnostic
 
-- **Statut** : ✅ Accepté
-- **Date** : 2026-07-21
-- **Décideurs** : Arthur-Olivier Fortin
-- **Portée** : `@a-world-felt/nathan-agent-core`
+- **Status**: ✅ Accepted
+- **Date**: 2026-07-21
+- **Deciders**: Arthur-Olivier Fortin
+- **Scope**: `@a-world-felt/nathan-agent-core`
 
-## Contexte
+## Context
 
-Le harnais est **ce qui justifie le package**. Une boucle d'agent, c'est deux cents lignes que n'importe qui réécrit ; ce qui est difficile et réellement réutilisable, c'est de pouvoir tester quelque chose de non déterministe. C'est aussi la seule partie sans précédent maison — ni Marcel ni `NATHAN-jira-package` n'ont d'équivalent.
+The harness is **what justifies the package**. An agent loop is two hundred lines that anyone can rewrite; what is hard and genuinely reusable is being able to test something non-deterministic. It is also the only part with no in-house precedent: neither Marcel nor `NATHAN-jira-package` has an equivalent.
 
-Besoin formulé : *« mettre un agent dans une app et vérifier s'il est capable de naviguer dedans. Avant de le mettre dans l'app, lui donner les tools : changer des pages, fetch la position actuelle, cliquer sur les composantes. Mais au lieu de vraiment le mettre dans l'app, quand il demande fetch page, ça retourne la liste de l'app mock qui n'existe pas. Quand il change de page, ça change juste une variable. L'agent n'a aucune idée qu'il n'est pas vraiment dans l'app. »*
+Stated need: *"put an agent in an app and check whether it can navigate inside it. Before putting it in the app, give it the tools: change pages, fetch the current position, click on the components. But instead of really putting it in the app, when it asks to fetch the page, it returns the list from the mock app that doesn't exist. When it changes page, it just changes a variable. The agent has no idea it's not really in the app."*
 
-Puis : *« un harnais qui change les modèles et vérifie les mêmes critères, avec une visualisation des coûts, durée, réussite selon les paramètres — modèle, type de mémoire, etc. »*
+Then: *"a harness that swaps models and checks the same criteria, with a visualization of cost, duration, and success by parameters: model, memory type, etc."*
 
-### Le principe qui rend ça possible
+### The principle that makes this possible
 
-L'agent n'a **aucun accès au monde** en dehors des résultats d'outils. Contrôler cette frontière, c'est contrôler sa réalité entière. Ce n'est pas une astuce de test, c'est une propriété structurelle.
+The agent has **no access to the world** other than tool results. Controlling that boundary means controlling its entire reality. This is not a testing trick, it is a structural property.
 
-Meastro exploite exactement ça (`_toolMapping`, `ToolDispatcherBlockExecutor.cs:62-73`) : une table de substitution redirige les identifiants d'outils vers des blocs de capture qui enregistrent l'intention et renvoient des réponses réalistes sans toucher au disque. Vérifiée **après** les permissions, donc inexploitable pour s'échapper.
+Meastro exploits exactly this (`_toolMapping`, `ToolDispatcherBlockExecutor.cs:62-73`): a substitution table redirects tool identifiers to capture blocks that record the intent and return realistic responses without touching the disk. Checked **after** permissions, and therefore unusable for escaping.
 
-## Une distinction qui change l'API : mock ≠ simulateur
+## A distinction that changes the API: mock ≠ simulator
 
-- Un **mock** renvoie une valeur figée. Sans état.
-- Ce qui est décrit ici est un **simulateur** : plusieurs outils partageant un état mutable et cohérent. `navigate("réglages")` puis `getCurrentPage()` doit renvoyer `"réglages"`.
+- A **mock** returns a frozen value. Stateless.
+- What is described here is a **simulator**: several tools sharing a mutable, coherent state. `navigate("réglages")` then `getCurrentPage()` must return `"réglages"`.
 
-Un `mockTool(name)` sans état ne couvre pas le besoin.
+A stateless `mockTool(name)` does not cover the need.
 
-## Options évaluées
+## Options considered
 
-**A — Mocks sans état, un par outil.** Insuffisant : ne modélise pas la navigation.
+**A: Stateless mocks, one per tool.** Insufficient: does not model navigation.
 
-**B — Simulateur : une fabrique d'environnement dont les outils sont des vues sur un état partagé.** L'assertion finale porte sur l'état du simulateur.
+**B: Simulator: an environment factory whose tools are views onto a shared state.** The final assertion bears on the simulator's state.
 
-**C — Enregistrement/rejeu de traces réelles.** Fidèle, mais exige une vraie app — qui n'existe pas encore — et casse dès que l'app change.
+**C: Recording/replay of real traces.** Faithful, but requires a real app (which does not yet exist) and breaks as soon as the app changes.
 
-## Décision
+## Decision
 
-**Option B**, sur deux niveaux.
+**Option B**, on two levels.
 
-### Niveau 1 — le scénario
+### Level 1: the scenario
 
 ```ts
 const naviguer = defineScenario({
@@ -53,7 +53,7 @@ const naviguer = defineScenario({
 });
 ```
 
-### Niveau 2 — la matrice
+### Level 2: the matrix
 
 ```ts
 const report = await runMatrix({
@@ -64,53 +64,53 @@ const report = await runMatrix({
 report.toJSON();  report.toCSV();
 ```
 
-`axes` en produit cartésien plutôt que des champs figés : modèle et mémoire aujourd'hui, température ou `maxIterations` demain, sans changer la signature.
+`axes` as a Cartesian product rather than fixed fields: model and memory today, temperature or `maxIterations` tomorrow, without changing the signature.
 
-### Trois règles non négociables
+### Three non-negotiable rules
 
-1. **`env` est une fabrique, pas une instance.** Chaque exécution repart d'un état neuf. Sinon la 2ᵉ des 5 répétitions démarre où la 1ʳᵉ s'est arrêtée et les taux ne veulent rien dire. Bug invisible.
-2. **Les attentes sont des prédicats, pas une séquence stricte.** Exiger l'ordre exact fait échouer un modèle qui appelle `getCurrentPage` avant `navigate` alors qu'il a raison.
-3. **Le rapport conserve les échecs, pas seulement les taux.** « 60 % de réussite » n'apprend rien sans voir ce qu'ont fait les 40 %. Chaque exécution ratée garde sa trace : appels d'outils, état final, `stopReason`.
+1. **`env` is a factory, not an instance.** Each run starts again from a fresh state. Otherwise the 2nd of the 5 repetitions starts where the 1st left off and the rates mean nothing. An invisible bug.
+2. **Expectations are predicates, not a strict sequence.** Requiring the exact order fails a model that calls `getCurrentPage` before `navigate` even though it is right.
+3. **The report keeps the failures, not just the rates.** "60% success" teaches nothing without seeing what the 40% did. Each failed run keeps its trace: tool calls, final state, `stopReason`.
 
-### Une exécution ne mesure rien
+### One run measures nothing
 
-Les modèles sont non déterministes : un succès sur un essai ne distingue pas un modèle à 95 % d'un modèle à 60 %. `runs: N` par combinaison, agrégé en taux. Conçu dès le départ — l'ajouter après change la signature.
+Models are non-deterministic: a single successful attempt does not distinguish a 95% model from a 60% model. `runs: N` per combination, aggregated into rates. Designed from the start: adding it afterward changes the signature.
 
-## Deux suites distinctes, deux outils
+## Two distinct suites, two tools
 
-| | Ce que ça teste | Outil |
+| | What it tests | Tool |
 |---|---|---|
-| **Tests unitaires** | notre boucle : dispatch, `maxIterations`, terminaison. Déterministe. | `node:test` (zéro dépendance) |
-| **Évals** | le modèle. Non déterministe, lent, payant en V2. | **pilote maison**, lancé à la main |
+| **Unit tests** | our loop: dispatch, `maxIterations`, termination. Deterministic. | `node:test` (zero dependencies) |
+| **Evals** | the model. Non-deterministic, slow, paid in V2. | **in-house driver**, run by hand |
 
-Le harnais est **agnostique du lanceur** : il retourne un résultat, le consommateur affirme avec ce qu'il veut. Le coupler à vitest en ferait une dépendance de pair imposée aux repos consommateurs.
+The harness is **runner-agnostic**: it returns a result, and the consumer asserts with whatever it wants. Coupling it to vitest would make it a peer dependency imposed on consumer repos.
 
-Une éval n'est pas une suite de tests : elle ne pense pas en réussi/échoué mais en **taux**, sur une **matrice**, et produit un **rapport**. Elle ne bloque jamais un commit. Ce qu'il faut n'est donc pas un lanceur de tests, mais une boucle et un tableau — petit, et justifié.
+An eval is not a test suite: it does not think in pass/fail but in **rates**, over a **matrix**, and produces a **report**. It never blocks a commit. What is needed is therefore not a test runner, but a loop and a table: small, and justified.
 
-## Le package émet des données, il n'affiche rien
+## The package emits data, it displays nothing
 
-Une interface web est envisagée plus tard. Elle n'a pas sa place dans une librairie : `toJSON()` / `toCSV()` suffisent, et l'interface se construira dans le repo IDE. Si la forme du rapport est correcte, elle ne coûtera rien.
+A web interface is envisaged later. It has no place in a library: `toJSON()` / `toCSV()` suffice, and the interface will be built in the IDE repo. If the report's shape is right, it will cost nothing.
 
-**Investir dans la structure du rapport, pas dans l'affichage.**
+**Invest in the report's structure, not in the display.**
 
-## Conséquences
+## Consequences
 
-**Positives**
+**Positive**
 
-- Le package livre le faux provider et le simulateur — sans ça, chaque consommateur les réécrit, mal.
-- Aucune dépendance de test imposée aux consommateurs.
-- Le même harnais sert les deux suites : avec le faux provider il teste la boucle de façon déterministe, avec un vrai provider il évalue le modèle.
-- Rendu possible par `step()` (`ADR-AGENT-0003`) : le harnais pilote l'exécution des outils au lieu de la subir.
+- The package ships the fake provider and the simulator: without them, each consumer rewrites them, badly.
+- No test dependency imposed on consumers.
+- The same harness serves both suites: with the fake provider it tests the loop deterministically, with a real provider it evaluates the model.
+- Made possible by `step()` (`ADR-AGENT-0003`): the harness drives tool execution instead of being subjected to it.
 
-**Négatives**
+**Negative**
 
-- Un simulateur est du code à écrire et à maintenir pour chaque domaine testé. Le package fournit la mécanique ; les simulateurs de l'IDE vivront dans le repo IDE.
-- Un simulateur diverge de l'app réelle avec le temps. Un scénario vert ne garantit pas que ça marche en vrai — c'est un test d'intégration qui manquera toujours.
+- A simulator is code to write and maintain for each domain tested. The package provides the mechanics; the IDE's simulators will live in the IDE repo.
+- A simulator diverges from the real app over time. A green scenario does not guarantee it works for real: that is an integration test that will always be missing.
 
-**Aucune table de substitution n'est nécessaire**
+**No substitution table is necessary**
 
-Meastro a besoin d'une table de redirection (`_toolMapping`) parce que ses outils sont des manifestes sur disque résolus par identifiant à l'exécution — il n'y a pas d'autre moyen d'injecter une implémentation différente.
+Meastro needs a redirection table (`_toolMapping`) because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
 
-Ici, `ITool` est une interface et les outils sont passés en objets : la substitution se fait **à la construction**, en passant simplement d'autres objets. L'abstraction, c'est l'interface elle-même. Voir `ADR-AGENT-0010`.
+Here, `ITool` is an interface and tools are passed as objects: substitution happens **at construction**, simply by passing different objects. The abstraction is the interface itself. See `ADR-AGENT-0010`.
 
-C'est aussi ce qui évite d'hériter du piège de Meastro : `_toolMapping` y est une variable de session propagée entre sessions — un agent capable d'écrire des variables de session pourrait recâbler ses propres outils.
+This is also what avoids inheriting Meastro's pitfall: there, `_toolMapping` is a session variable propagated between sessions, so an agent able to write session variables could rewire its own tools.
