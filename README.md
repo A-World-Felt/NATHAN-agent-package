@@ -33,6 +33,35 @@ On épingle une **version** via le tag (`#vX.Y.Z`) ; pour repointer, on change l
 
 ---
 
+## Setup côté consommateur
+
+Ce package est **ESM pur** et n'expose son code et ses types **que** par la carte `exports`. Ton projet consommateur doit donc être en **ESM** (`"type": "module"`) et en résolution **NodeNext**, faute de quoi ni le code ni les types ne se résolvent : une résolution classique (`"moduleResolution": "node"`) ne sait pas lire une carte `exports`.
+
+Le minimum à avoir dans le projet qui consomme le package :
+
+```jsonc
+// package.json (du consommateur)
+{
+  "type": "module"
+}
+```
+
+```jsonc
+// tsconfig.json (du consommateur)
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "strict": true
+  }
+}
+```
+
+En NodeNext, tes propres imports relatifs portent aussi l'extension `.js`, même depuis un `.ts`.
+
+---
+
 ## Points d'entrée
 
 Trois sous-chemins, **à la carte** : un agent ne reçoit que ce qu'on lui passe, rien d'implicite.
@@ -90,7 +119,9 @@ Les clés d'API et URL de provider passent donc **par l'environnement du consomm
 
 ---
 
-## Développement
+## Développement du package
+
+> Ces commandes servent à **développer ce package**, pas à le consommer. Pour l'utiliser dans un projet, voir « Setup côté consommateur » ci-dessus.
 
 ```bash
 npm run build       # tsc -p tsconfig.build.json → dist/
