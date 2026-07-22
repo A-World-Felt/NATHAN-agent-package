@@ -1,25 +1,25 @@
 # @a-world-felt/nathan-agent-core
 
-> **Version courante : 0.1.0-alpha** (préversion). L'API publique n'est pas encore figée ; seul le point d'entrée `.` (les modèles du contrat) est livré. Voir [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.1.0-alpha** (prerelease). The public API is not frozen yet; only the `.` entry point (the contract models) ships. See [ROADMAP.md](./ROADMAP.md).
 
-Un moteur agentique LLM **réutilisable** : le **moteur** (providers LLM, outils, boucle, mémoire), les **définitions d'agents** (prompt + outils) et un **harnais de test d'agents**. Agnostique du provider **et** de l'application : **le repo consommateur choisit son provider et apporte ses propres outils**. Il se branche dans n'importe quel projet Node/TypeScript.
+A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
-Le raisonnement derrière chaque choix de conception est dans [`docs/decisions/`](./docs/decisions) (les ADR).
+The reasoning behind each design choice is in [`docs/decisions/`](./docs/decisions) (the ADRs).
 
-- **ESM pur** (`"type": "module"`, `NodeNext`). Node ≥ 18.
-- **Package privé et restreint** (`@a-world-felt`). Repo : `A-World-Felt/NATHAN-agent-package`.
+- **Pure ESM** (`"type": "module"`, `NodeNext`). Node ≥ 18.
+- **Private, restricted package** (`@a-world-felt`). Repo: `A-World-Felt/NATHAN-agent-package`.
 
 ---
 
 ## Installation
 
-Le package se consomme en **dépendance git par tag** : npm clone le repo, lit son `package.json` et le résout sous le nom scopé. **Aucun jeton npm requis** : l'authentification passe par git (SSH, ou HTTPS avec un jeton GitHub qui a accès au repo privé). npm exécute le `prepare` (build `tsc`) à l'installation.
+The package is consumed as a **git dependency by tag**: npm clones the repo, reads its `package.json` and resolves it under the scoped name. **No npm token required**: authentication goes through git (SSH, or HTTPS with a GitHub token that has access to the private repo). npm runs the `prepare` (`tsc` build) at install time.
 
 ```bash
 npm i github:A-World-Felt/NATHAN-agent-package#v0.1.0-alpha
 ```
 
-Dans le `package.json` du consommateur, la clé de dépendance est le **nom scopé** ; la valeur est la spec git :
+In the consumer's `package.json`, the dependency key is the **scoped name**; the value is the git spec:
 
 ```json
 {
@@ -29,25 +29,25 @@ Dans le `package.json` du consommateur, la clé de dépendance est le **nom scop
 }
 ```
 
-On épingle une **version** via le tag (`#vX.Y.Z`) ; pour repointer, on change le tag (voir la convention de versioning dans [CONTRIBUTING.md](./CONTRIBUTING.md)).
+You pin a **version** via the tag (`#vX.Y.Z`); to repoint, change the tag (see the versioning convention in [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
 ---
 
-## Setup côté consommateur
+## Consumer-side setup
 
-Ce package est **ESM pur** et n'expose son code et ses types **que** par la carte `exports`. Ton projet consommateur doit donc être en **ESM** (`"type": "module"`) et en résolution **NodeNext**, faute de quoi ni le code ni les types ne se résolvent : une résolution classique (`"moduleResolution": "node"`) ne sait pas lire une carte `exports`.
+This package is **pure ESM** and exposes its code and types **only** through the `exports` map. Your consumer project must therefore be **ESM** (`"type": "module"`) and use **NodeNext** resolution, otherwise neither the code nor the types resolve: classic resolution (`"moduleResolution": "node"`) cannot read an `exports` map.
 
-Le minimum à avoir dans le projet qui consomme le package :
+The minimum the consuming project needs:
 
 ```jsonc
-// package.json (du consommateur)
+// package.json (of the consumer)
 {
   "type": "module"
 }
 ```
 
 ```jsonc
-// tsconfig.json (du consommateur)
+// tsconfig.json (of the consumer)
 {
   "compilerOptions": {
     "module": "NodeNext",
@@ -58,86 +58,86 @@ Le minimum à avoir dans le projet qui consomme le package :
 }
 ```
 
-En NodeNext, tes propres imports relatifs portent aussi l'extension `.js`, même depuis un `.ts`.
+Under NodeNext, your own relative imports also carry the `.js` extension, even from a `.ts` file.
 
 ---
 
-## Points d'entrée
+## Entry points
 
-Trois sous-chemins, **à la carte** : un agent ne reçoit que ce qu'on lui passe, rien d'implicite.
+Three subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
-| Sous-chemin | Contenu | État en `0.1.0-alpha` |
+| Subpath | Contents | State in `0.1.0-alpha` |
 |---|---|---|
-| `.` | moteur, ports, types (**aucun accès disque**, importable partout) | **disponible** (modèles du contrat) |
-| `./tools` | outils fichiers génériques (couplés à `fs`, opt-in) | **à venir** (PR2+) |
-| `./testing` | harnais de test (faux provider, simulateur, scénarios) | **à venir** (PR5) |
+| `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models) |
+| `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
+| `./testing` | test harness (fake provider, simulator, scenarios) | **coming** (PR5) |
 
-> En `0.1.0-alpha`, seul `.` résout vers du code. `./tools` et `./testing` sont déclarés dans la carte `exports` (les 3 points d'entrée sont un choix de conception, `ADR-AGENT-0002`) mais leurs frameworks sont encore des squelettes : **ne pas les importer avant les PR qui les remplissent.**
+> In `0.1.0-alpha`, only `.` resolves to code. `./tools` and `./testing` are declared in the `exports` map (the 3 entry points are a design choice, `ADR-AGENT-0002`) but their frameworks are still skeletons: **do not import them before the PRs that fill them in.**
 
-### Ce que `.` exporte aujourd'hui
+### What `.` exports today
 
-Les **modèles du contrat**, des types purs, sans dépendance runtime, qui *sont* le contrat que les implémentations respecteront :
+The **contract models**: pure types, no runtime dependency, that *are* the contract the implementations will honor:
 
-- **LLM** : `Role`, `Message`, `ToolCall`, `ToolResult`, `Usage`, `LLMResponse`, `LLMErrorCode`, et la classe `LLMError`.
-- **Outils** : `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
+- **LLM**: `Role`, `Message`, `ToolCall`, `ToolResult`, `Usage`, `LLMResponse`, `LLMErrorCode`, and the `LLMError` class.
+- **Tools**: `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
 
-### Exemple minimal
+### Minimal example
 
 ```ts
 import { LLMError, type Message, type ToolSchema } from "@a-world-felt/nathan-agent-core";
 
-// Un message de conversation, tel qu'envoyé au modèle.
+// A conversation message, as sent to the model.
 const salut: Message = { role: "user", content: "amène-moi aux réglages" };
 
-// Le schéma des paramètres d'un outil, tel que présenté au modèle.
+// A tool's parameter schema, as presented to the model.
 const navigate: ToolSchema = {
   type: "object",
   properties: { page: { type: "string", description: "page cible" } },
   required: ["page"],
 };
 
-// Les erreurs de provider remontent (contrairement aux échecs d'outil) et portent un code.
+// Provider errors bubble up (unlike tool failures) and carry a code.
 const err = new LLMError("UNKNOWN_PROVIDER", "provider inconnu");
 console.log(salut.role, navigate.required, err.code);
 ```
 
-Cet import **compile** et **s'exécute** contre `0.1.0-alpha` : c'est la vérification d'installation de la PR1.
+This import **compiles** and **runs** against `0.1.0-alpha`: it is the PR1 install verification.
 
 ---
 
 ## Configuration
 
-**Une librairie ne lit pas de fichier de config.** Elle lit `process.env` ; c'est **l'application** consommatrice qui charge son `.env` (par ex. via `dotenv` dans son point d'entrée). Ce package ne charge jamais de `.env` à l'import : le faire injecterait des variables dans le `process.env` du consommateur, ce qui n'est pas le rôle d'une librairie.
+**A library does not read a config file.** It reads `process.env`; it is the **consuming application** that loads its `.env` (e.g. via `dotenv` in its entry point). This package never loads a `.env` on import: doing so would inject variables into the consumer's `process.env`, which is not a library's role.
 
-Les clés d'API et URL de provider passent donc **par l'environnement du consommateur**, jamais en dur, jamais commitées. Les variables concrètes (endpoint Ollama, etc.) arrivent avec le port LLM en PR2.
-
----
-
-## ⚠️ Avertissement de sécurité
-
-**La vérification de commandes n'est pas une frontière de sécurité.** Elle protège contre l'accident, pas contre l'adversaire : avec un LLM dans la boucle, une injection de prompt peut produire des appels conçus pour la contourner. **Seul un container est une frontière de sécurité.** Un outil doté d'un accès large (écriture disque, shell) doit être isolé par le consommateur. Justification : `ADR-AGENT-0004`.
+API keys and provider URLs therefore go **through the consumer's environment**, never hardcoded, never committed. The concrete variables (Ollama endpoint, etc.) arrive with the LLM port in PR2.
 
 ---
 
-## Développement du package
+## ⚠️ Security warning
 
-> Ces commandes servent à **développer ce package**, pas à le consommer. Pour l'utiliser dans un projet, voir « Setup côté consommateur » ci-dessus.
+**Command checking is not a security boundary.** It protects against accident, not against an adversary: with an LLM in the loop, a prompt injection can produce calls designed to bypass it. **Only a container is a security boundary.** A tool with broad access (disk writes, shell) must be isolated by the consumer. Rationale: `ADR-AGENT-0004`.
+
+---
+
+## Developing the package
+
+> These commands are for **developing this package**, not consuming it. To use it in a project, see "Consumer-side setup" above.
 
 ```bash
 npm run build       # tsc -p tsconfig.build.json → dist/
-npm test            # node:test, zéro dépendance
+npm test            # node:test, zero dependencies
 npm run typecheck   # tsc --noEmit
 ```
 
-Le build produit `dist/index.js` **et** `dist/index.d.ts`. Piège ESM + `NodeNext` : les imports relatifs portent l'extension du fichier **émis**, donc `.js` même depuis un `.ts` : `import type { Message } from "./models/index.js"`.
+The build produces `dist/index.js` **and** `dist/index.d.ts`. ESM + `NodeNext` pitfall: relative imports carry the **emitted** file's extension, so `.js` even from a `.ts`: `import type { Message } from "./models/index.js"`.
 
 ---
 
-## Pour aller plus loin
+## Going further
 
-| Document | Contenu |
+| Document | Contents |
 |---|---|
-| [ROADMAP.md](./ROADMAP.md) | les 4 versions et la carte cible de l'arborescence |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | branches, commits, PR, conventions de fichiers/architecture/versioning |
-| [`docs/decisions/`](./docs/decisions) | les ADR, le *pourquoi* de chaque choix |
-| [`docs/plans/`](./docs/plans) | le découpage en 6 PR de la V1 |
+| [ROADMAP.md](./ROADMAP.md) | the 4 versions and the target tree map |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | branches, commits, PRs, file/architecture/versioning conventions |
+| [`docs/decisions/`](./docs/decisions) | the ADRs, the *why* of each choice |
+| [`docs/plans/`](./docs/plans) | the V1 breakdown into 6 PRs |

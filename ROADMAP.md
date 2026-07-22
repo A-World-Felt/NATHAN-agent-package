@@ -1,126 +1,126 @@
-# Roadmap — nathan-agent-core
+# Roadmap: nathan-agent-core
 
-Quatre versions. Les couches étant agnostiques du fournisseur, **le choix du provider est une décision tardive** : on démarre sur ce qui est gratuit et local, on monte en qualité ensuite.
+Four versions. Since the layers are provider-agnostic, **choosing the provider is a late decision**: you start on what is free and local, then move up in quality afterward.
 
-Le raisonnement derrière chaque choix est dans `docs/decisions/`. Le découpage en PR de la V1 est dans `docs/plans/2026-07-21-v1-decoupage-pr.md`.
-
----
-
-## Consommateur cible
-
-Le package sert d'abord **l'IDE accessible de NATHAN** (ADR-0006 projet, Flux E) : un assistant vocal pour personnes non-voyantes, capable de **naviguer dans l'application et d'y écrire**. L'agent traduit la dictée en MicroPython.
-
-Contrainte permanente, formulée par l'équipe :
-
-> **Pas d'overhead. Ça doit rester maintenable.**
-
-C'est le critère qui a écarté le cadre de permissions générique (`ADR-AGENT-0004`), le tokenizer embarqué (`ADR-AGENT-0008`) et le registre runtime (`ADR-AGENT-0005`).
+The reasoning behind each choice is in `docs/decisions/`. The V1 PR breakdown is in `docs/plans/2026-07-21-v1-decoupage-pr.md`.
 
 ---
 
-## V1 — Le moteur, sur Ollama
+## Target consumer
 
-**Toutes les couches de l'agentique, un seul provider, aucune clé d'API.**
+The package first serves **NATHAN's accessible IDE** (project ADR-0006, Flux E): a voice assistant for blind people, able to **navigate the application and write in it**. The agent translates dictation into MicroPython.
 
-| Couche | Contenu |
+Permanent constraint, stated by the team:
+
+> **No overhead. It must stay maintainable.**
+
+It is the criterion that ruled out the generic permissions framework (`ADR-AGENT-0004`), the embedded tokenizer (`ADR-AGENT-0008`) and the runtime registry (`ADR-AGENT-0005`).
+
+---
+
+## V1: The engine, on Ollama
+
+**All the agentic layers, a single provider, no API key.**
+
+| Layer | Contents |
 |---|---|
 | LLM | `ILLMProvider`, `OllamaLLMProvider`, `FakeLLMProvider` |
-| Outils | `ITool`, `dispatchTool`, trois outils fichiers (opt-in via `./tools`) |
+| Tools | `ITool`, `dispatchTool`, three file tools (opt-in via `./tools`) |
 | Agent | `step()`, `makeRunAgent`, `stopReason` |
-| Contexte | `IContextProvider`, `SlidingWindowContext`, `ITokenCounter` |
-| Définitions | `defineAgent()` en TypeScript |
-| Harnais | simulateur, scénarios, matrice, métriques |
+| Context | `IContextProvider`, `SlidingWindowContext`, `ITokenCounter` |
+| Definitions | `defineAgent()` in TypeScript |
+| Harness | simulator, scenarios, matrix, metrics |
 
-**Pourquoi Ollama** : local, gratuit, zéro clé. C'est la seule option réellement gratuite (voir le correctif plus bas). Permet de valider la boucle et le harnais sans dépenser un sou ni gérer de secrets.
+**Why Ollama**: local, free, zero keys. It is the only genuinely free option (see the correction below). It lets you validate the loop and the harness without spending a cent or managing secrets.
 
-**Pas de couche de permissions.** Les contraintes sont portées par les outils : un `WriteFile` construit avec un répertoire racine refuse d'en sortir. Dix lignes, aucun cadre. Détail et avertissement de sécurité : `ADR-AGENT-0004`.
+**No permissions layer.** The constraints are carried by the tools: a `WriteFile` built with a root directory refuses to leave it. Ten lines, no framework. Details and security warning: `ADR-AGENT-0004`.
 
-### Découpage en six PR
+### Breakdown into six PRs
 
-Chaque PR ne dépend que des précédentes, et **chaque PR se vérifie**. Détail complet, pièges compris : `docs/plans/2026-07-21-v1-decoupage-pr.md`.
+Each PR depends only on the previous ones, and **each PR verifies itself**. Full detail, pitfalls included: `docs/plans/2026-07-21-v1-decoupage-pr.md`.
 
-| PR | Contenu | Critère de fin |
+| PR | Contents | Completion criterion |
 |---|---|---|
-| **1** | packaging (3 branches d'`exports`, `tsconfig` ×2) + `models/` + **arborescence complète** + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
-| **2** | `ILLMProvider` + `OllamaLLMProvider` + **`FakeLLMProvider`** | test déterministe sur le faux ; un appel réel à Ollama, sortie montrée |
-| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | un historique qui déborde est tronqué ; `observe()` no-op |
-| **4** | `AgenticLLM` (classe) + `step()` (fonction pure) + `ToolDispatcher` | boucle testée **sur le faux** : dispatch, `maxIterations`, `stopReason` |
-| **5** | simulateur + `defineScenario` + `runScenario` | un scénario de navigation bout en bout, assertion sur l'**état du simulateur** |
-| **6** | `runMatrix` + métriques + `toJSON`/`toCSV` | une matrice 2 × 2 × 5 → 20 exécutions, un taux par combinaison, un CSV lisible |
+| **1** | packaging (3 `exports` branches, `tsconfig` ×2) + `models/` + **full tree** + schema | `npm run build` produces `dist/`; `npm install` succeeds from a test repo |
+| **2** | `ILLMProvider` + `OllamaLLMProvider` + **`FakeLLMProvider`** | deterministic test on the fake; one real call to Ollama, output shown |
+| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | an overflowing history is truncated; `observe()` no-op |
+| **4** | `AgenticLLM` (class) + `step()` (pure function) + `ToolDispatcher` | loop tested **on the fake**: dispatch, `maxIterations`, `stopReason` |
+| **5** | simulator + `defineScenario` + `runScenario` | one end-to-end navigation scenario, assertion on the **simulator state** |
+| **6** | `runMatrix` + metrics + `toJSON`/`toCSV` | a 2 × 2 × 5 matrix → 20 runs, one rate per combination, a readable CSV |
 
-Trois points d'ordonnancement qui ne sont pas arbitraires :
+Three ordering points that are not arbitrary:
 
-- **La PR1 n'est pas une PR de fichiers vides.** Une arborescence sans contenu ne se vérifie pas. Le jalon est la **chaîne de distribution** — le package se construit et s'installe — avec les types comme seul contenu, puisqu'ils *sont* le contrat.
-- **Le faux provider est en PR2, pas dans le harnais.** Sans lui, la PR4 testerait *le modèle* au lieu de *notre boucle*. Il sert aussi de vérification de l'interface : si le faux est pénible à écrire, le port est mauvais, et on l'apprend tout de suite.
-- **`LLMResponse.usage` est rempli dès la PR2.** Le coût vaudra `null` partout en V1 sur Ollama, mais rétro-ajouter la plomberie dans chaque adaptateur plus tard coûte cher.
+- **PR1 is not a PR of empty files.** A tree with no content cannot be verified. The milestone is the **distribution chain** (the package builds and installs) with the types as the only content, since they *are* the contract.
+- **The fake provider is in PR2, not in the harness.** Without it, PR4 would test *the model* instead of *our loop*. It also serves as interface verification: if the fake is painful to write, the port is bad, and we learn it right away.
+- **`LLMResponse.usage` is populated as of PR2.** The cost will be `null` everywhere in V1 on Ollama, but retrofitting the plumbing into every adapter later is expensive.
 
-**Puis** : intégration dans le repo IDE, et retour ici quand un mur apparaît.
-
----
-
-## V2 — Deuxième provider + évaluation sur vrai modèle
-
-**Mesurer la qualité de l'appel d'outils, et faire enfin parler la colonne coût.**
-
-- Un second adaptateur derrière le même port — **aucune modification du moteur**
-- Évaluations réelles : vrai modèle, outils simulés, matrice sur plusieurs axes
-
-> ### ⚠️ Correctif — l'abonnement ne donne pas l'API
->
-> L'hypothèse initiale était de choisir OpenAI « parce que l'abonnement permet de faire des appels API, contrairement à Claude ou DeepSeek ». **C'est faux, et vérifié** : ChatGPT Plus (20 $/mois) et l'API OpenAI sont deux produits à facturation séparée. Plus couvre l'app web ; l'API est en paiement à l'usage par jeton, avec un solde à créditer à part.
->
-> C'est vrai chez tout le monde : OpenAI et Anthropic vendent tous deux un *agent CLI* sur abonnement (Codex, Claude Code), aucun ne vend l'accès API brut sur abonnement. Pour une librairie qui appelle l'API depuis son propre code, c'est du prépayé par jeton partout.
->
-> **Conséquence** : le provider V2 se choisit sur les vrais critères — **qualité de l'appel d'outils, coût au jeton, latence**. DeepSeek n'est plus à écarter (parmi les moins chers au jeton). OpenAI reste défendable, mais pas pour la raison invoquée.
->
-> Sources : [OpenAI Help Center](https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus) · [ChatGPT Plus n'inclut pas l'API](https://folding-sky.com/blog/why-use-api-keys-not-chatgpt) · [OpenAI Developer Community](https://community.openai.com/t/api-access-as-a-chatgpt-plus-subscriber/573409)
+**Then**: integration into the IDE repo, and back here when a wall appears.
 
 ---
 
-## V3 — Mémoire auto-alimentée
+## V2: Second provider + evaluation on a real model
 
-**Que l'agent devienne personnalisé par personne.**
+**Measure tool-call quality, and finally make the cost column speak.**
 
-Un `MemoryContextProvider` qui s'alimente tout seul, dans l'esprit d'un `CLAUDE.md` — mais par utilisateur, et écrit par l'agent lui-même au fil des échanges.
+- A second adapter behind the same port: **no change to the engine**
+- Real evaluations: real model, simulated tools, matrix across several axes
 
-**Se branche sans rien casser** : `context/providers/memory/` se dépose à côté de `sliding-window/`, derrière le même `IContextProvider`. Le moteur ne bouge pas.
-
-C'est la raison d'être du port : fenêtre glissante et mémoire sont **deux stratégies derrière un même contrat**. D'où `observe()` présent dès la V1, même si `SlidingWindowContext.observe()` y est un no-op littéral.
-
-Enjeu d'accessibilité : pour une personne non-voyante qui dicte son code, un agent qui retient ses habitudes évite de tout réexpliquer à chaque séance.
-
----
-
-## V4 — La voix
-
-`IVoiceProvider` (`transcribe` / `synthesize`), la composition voix par-dessus `run-agent`, et les providers voix.
-
-**Repoussée délibérément.** Deux raisons :
-
-1. **Ollama ne fait ni transcription ni synthèse.** La voix en V1 aurait forcé un deuxième provider et des clés dès le premier jour — en contradiction avec « on commence simple ».
-2. Le package agentique doit être terminé d'abord (décision de l'équipe).
-
-`stream()` est dans `ILLMProvider` **dès la V1** en prévision : la synthèse vocale voudra parler pendant que le modèle écrit, pas après.
+> ### ⚠️ Correction: the subscription does not grant the API
+>
+> The initial assumption was to pick OpenAI "because the subscription allows API calls, unlike Claude or DeepSeek". **This is false, and verified**: ChatGPT Plus ($20/month) and the OpenAI API are two separately billed products. Plus covers the web app; the API is pay-per-token usage, with a balance to credit separately.
+>
+> This is true everywhere: OpenAI and Anthropic both sell a *CLI agent* on subscription (Codex, Claude Code), neither sells raw API access on subscription. For a library that calls the API from its own code, it is prepaid per token everywhere.
+>
+> **Consequence**: the V2 provider is chosen on the real criteria: **tool-call quality, cost per token, latency**. DeepSeek is no longer to be ruled out (among the cheapest per token). OpenAI remains defensible, but not for the stated reason.
+>
+> Sources: [OpenAI Help Center](https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus) · [ChatGPT Plus does not include the API](https://folding-sky.com/blog/why-use-api-keys-not-chatgpt) · [OpenAI Developer Community](https://community.openai.com/t/api-access-as-a-chatgpt-plus-subscriber/573409)
 
 ---
 
-## Arborescence complète (carte cible, V1 → V4)
+## V3: Self-feeding memory
 
-Cette carte fige où **chaque** classe atterrit, toutes versions confondues. Le squelette (dossiers `.gitkeep`) est posé dès la PR1 ; chaque PR y dépose ensuite son code. `[V2]`/`[V3]`/`[V4]` = version d'apparition ; sans tag = V1.
+**So the agent becomes personalized per person.**
+
+A `MemoryContextProvider` that feeds itself, in the spirit of a `CLAUDE.md`, but per user, and written by the agent itself over the course of exchanges.
+
+**Plugs in without breaking anything**: `context/providers/memory/` drops in next to `sliding-window/`, behind the same `IContextProvider`. The engine does not move.
+
+This is the port's reason for being: sliding window and memory are **two strategies behind one contract**. Hence `observe()` present as of V1, even if `SlidingWindowContext.observe()` is a literal no-op there.
+
+Accessibility stake: for a blind person dictating their code, an agent that remembers their habits avoids re-explaining everything at each session.
+
+---
+
+## V4: Voice
+
+`IVoiceProvider` (`transcribe` / `synthesize`), the voice composition on top of `run-agent`, and the voice providers.
+
+**Deliberately deferred.** Two reasons:
+
+1. **Ollama does neither transcription nor synthesis.** Voice in V1 would have forced a second provider and keys from day one, contradicting "start simple".
+2. The agentic package must be finished first (team decision).
+
+`stream()` is in `ILLMProvider` **as of V1** by anticipation: voice synthesis will want to speak while the model writes, not after.
+
+---
+
+## Full tree (target map, V1 → V4)
+
+This map fixes where **each** class lands, all versions combined. The skeleton (`.gitkeep` folders) is laid down as of PR1; each PR then drops its code into it. `[V2]`/`[V3]`/`[V4]` = version of appearance; no tag = V1.
 
 ```
 src/
-  index.ts                       point d'entrée « . » — moteur + ports + types, AUCUN fs
+  index.ts                       "." entry point: engine + ports + types, NO fs
   llm/
     models/index.ts              Message · ToolCall · ToolResult · LLMResponse · Usage · LLMChunk · LLMError
     interfaces/ILLMProvider.ts
-    services/response-parser.ts        pur : JSON du provider → LLMResponse
+    services/response-parser.ts        pure: provider JSON → LLMResponse
     providers/
       ollama/ollama-adapter.ts   OllamaLLMProvider
       gemini/gemini-adapter.ts   GeminiLLMProvider           [V2]
       azure/azure-adapter.ts     AzureLLMProvider            [V2]
       index.ts                   PROVIDERS: Record<ProviderID, () => ILLMProvider>
-    infrastructure/with-metrics.ts     withMetrics (décorateur ILLMProvider → IMetricsCollector)
+    infrastructure/with-metrics.ts     withMetrics (ILLMProvider → IMetricsCollector decorator)
   context/
     interfaces/IContextProvider.ts
     interfaces/ITokenCounter.ts
@@ -131,71 +131,71 @@ src/
   tools/
     models/index.ts              ToolSchema
     interfaces/ITool.ts
-    application/use-cases/dispatch-tool.ts   dispatchTool (boîte « ToolDispatcher » du schéma)
-    infrastructure/              ReadFile · WriteFile · ListFiles   → exportés par « ./tools »
+    application/use-cases/dispatch-tool.ts   dispatchTool ("ToolDispatcher" box from the schema)
+    infrastructure/              ReadFile · WriteFile · ListFiles   → exported by "./tools"
   metrics/
     models/index.ts              UsageRecord · MetricsTotal · RateTable
     interfaces/IMetricsCollector.ts
-    services/aggregate.ts        pur : records → MetricsTotal (avec RateTable)
+    services/aggregate.ts        pure: records → MetricsTotal (with RateTable)
     infrastructure/collector.ts  MetricsCollector
-  voice/                          [V4] — tout le framework
+  voice/                          [V4]: the whole framework
     interfaces/IVoiceProvider.ts
     providers/
       gemini/…                   GeminiVoiceProvider
       azure/…                    AzureVoiceProvider
   agent/
     models/agent-definition.ts   AgentDefinition
-    services/define-agent.ts     defineAgent (pur)
-    services/step.ts             step(state, deps) (pur — une itération)
+    services/define-agent.ts     defineAgent (pure)
+    services/step.ts             step(state, deps) (pure: one iteration)
     application/dtos/index.ts    AgentDeps · AgentInput · AgentResult · AgentState
-    application/use-cases/agentic-llm.ts        AgenticLLM (classe — API publique)
-    application/use-cases/voice-agentic-llm.ts  VoiceAgenticLLM (classe)   [V4]
-  testing/                        → exporté par « ./testing », jamais en prod
-    fake-llm-provider.ts         FakeLLMProvider (2e implémentation d'ILLMProvider)
+    application/use-cases/agentic-llm.ts        AgenticLLM (class: public API)
+    application/use-cases/voice-agentic-llm.ts  VoiceAgenticLLM (class)   [V4]
+  testing/                        → exported by "./testing", never in prod
+    fake-llm-provider.ts         FakeLLMProvider (2nd ILLMProvider implementation)
     fake-app.ts · define-scenario.ts · run-scenario.ts · run-matrix.ts
 ```
 
-**Même patron dans chaque framework** : `models/` (données) · `interfaces/` (ports `I*`) · `services/` (fonctions pures) · `application/` (dtos + use-cases) · `providers/<vendor>/` et `infrastructure/` (adaptateurs I/O). On apprend un composant, on les connaît tous les six.
+**Same pattern in each framework**: `models/` (data) · `interfaces/` (ports `I*`) · `services/` (pure functions) · `application/` (dtos + use-cases) · `providers/<vendor>/` and `infrastructure/` (I/O adapters). You learn one component, you know all six.
 
-**Hors package** : `ExternalLLMProvider` / `ExternalVoiceProvider` (bande « Implémentation Externe » du schéma) sont écrits par le **repo consommateur** derrière les mêmes ports — pas des fichiers d'ici.
+**Outside the package**: `ExternalLLMProvider` / `ExternalVoiceProvider` (the "External Implementation" band of the schema) are written by the **consumer repo** behind the same ports, not files from here.
 
-**Les 3 points d'entrée** dans cet arbre : `.` = tout sauf `fs` et le faux provider ; `./tools` = les 3 outils fichiers ; `./testing` = le harnais.
+**The 3 entry points** in this tree: `.` = everything except `fs` and the fake provider; `./tools` = the 3 file tools; `./testing` = the harness.
 
-**Les 4 bandes du diagramme d'équipe** : Applicatif = `agent/` · Interface = tous les `interfaces/` · Implémentation Locale = `providers/` + `infrastructure/` livrés · Implémentation Externe = le repo consommateur.
+**The 4 bands of the team diagram**: Application = `agent/` · Interface = all the `interfaces/` · Local Implementation = shipped `providers/` + `infrastructure/` · External Implementation = the consumer repo.
 
 ---
 
-## Le cycle avec le repo IDE
+## The cycle with the IDE repo
 
-Le vrai moteur d'amélioration du package n'est pas cette roadmap, c'est la confrontation à un consommateur réel :
+The real engine that improves the package is not this roadmap, it is the confrontation with a real consumer:
 
 ```
-V1 livrée → intégration dans le repo IDE → harnais sur les vraies fonctionnalités
-   ↑                                                    │
-   └──────── on revient améliorer le package ←──── un mur apparaît
+V1 shipped → integration into the IDE repo → harness on the real features
+   ↑                                                     │
+   └──────── we come back to improve the package ←──── a wall appears
 ```
 
-**Point de vigilance.** D'après `PMC/CONTEXT-AGENT.md`, la stack IDE se tranche à `TECH-19` début S7 (janvier 2027) et le Flux E démarre à ce moment-là. Le package sera donc « fini » plusieurs mois avant l'existence de son consommateur.
+**Point of vigilance.** According to `PMC/CONTEXT-AGENT.md`, the IDE stack is decided at `TECH-19` in early S7 (January 2027) and Flux E starts at that point. The package will therefore be "finished" several months before its consumer exists.
 
-Conséquence pratique : **garder la V1 vraiment minimale.** Chaque abstraction ajoutée d'ici là est un pari sans retour d'information — et c'est exactement comme ça qu'on construit la mauvaise abstraction.
-
----
-
-## Ce qui n'a pas besoin d'être construit
-
-**Le versioning des agents.** Ni champ `version`, ni registre runtime, ni base de données. Un agent est un fichier TypeScript commité ; la version, c'est git ; « cette version est bonne », ce sont les tests qui le prouvent. Voir `ADR-AGENT-0005`.
-
-Versioning et évaluation sont la même fonctionnalité vue sous deux angles : versionner un prompt n'a d'intérêt que si l'on peut **mesurer** que la v2 bat la v1. Sans harnais, un versioning n'est que du changelog.
+Practical consequence: **keep V1 truly minimal.** Every abstraction added before then is a bet with no feedback, and that is exactly how you build the wrong abstraction.
 
 ---
 
-## Repoussé sans date
+## What does not need to be built
 
-| Sujet | Condition de déclenchement |
+**Agent versioning.** No `version` field, no runtime registry, no database. An agent is a committed TypeScript file; the version is git; "this version is good" is what the tests prove. See `ADR-AGENT-0005`.
+
+Versioning and evaluation are the same feature seen from two angles: versioning a prompt is only worthwhile if you can **measure** that v2 beats v1. Without a harness, versioning is just a changelog.
+
+---
+
+## Deferred with no date
+
+| Topic | Trigger condition |
 |---|---|
-| Couche de politique (permissions) | un consommateur expose une capacité large, type shell |
-| Exécution en container | idem — et c'est la **seule** vraie frontière de sécurité |
-| Approbation utilisateur avant écriture | quand le repo IDE en aura besoin ; `step()` la rend bon marché |
-| Tokenizer réel par famille de modèles | quand la calibration montrera une dérive hors marge |
-| Rendu des outils en prompt (modèles sans appel natif) | quand `supportsTools()` renverra `false` sur un modèle visé |
-| Interface web des rapports | dans le repo IDE, jamais dans le package |
+| Policy layer (permissions) | a consumer exposes a broad capability, shell-like |
+| Container execution | same, and it is the **only** true security boundary |
+| User approval before writing | when the IDE repo needs it; `step()` makes it cheap |
+| Real tokenizer per model family | when calibration shows drift beyond margin |
+| Tool rendering in prompt (models without native calls) | when `supportsTools()` returns `false` on a targeted model |
+| Web interface for reports | in the IDE repo, never in the package |
