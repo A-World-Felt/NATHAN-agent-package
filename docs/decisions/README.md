@@ -14,8 +14,8 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 
 | # | Decision | Status | Date |
 |---|---|---|---|
-| [ADR-AGENT-0001](ADR-AGENT-0001-hexagonal-architecture-use-cases-functions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 | 2026-07-21 |
-| [ADR-AGENT-0002](ADR-AGENT-0002-three-entry-points-opt-in-tools.md) | Three entry points, opt-in tools | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0001](ADR-AGENT-0001-hexagonal-architecture-use-cases-functions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 and 0012 | 2026-07-21 |
+| [ADR-AGENT-0002](ADR-AGENT-0002-three-entry-points-opt-in-tools.md) | Three entry points, opt-in tools | ✅ Accepted, complemented by 0012 | 2026-07-21 |
 | [ADR-AGENT-0003](ADR-AGENT-0003-loop-termination-state-machine.md) | Termination by absence of tool call, suspendable state machine | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0004](ADR-AGENT-0004-isolation-execution-policy.md) | Isolation: policy and execution, two composable axes | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0005](ADR-AGENT-0005-typescript-agents-git-versioning.md) | Agents declared in TypeScript, versioning via git | ✅ Accepted | 2026-07-21 |
@@ -25,6 +25,8 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | [ADR-AGENT-0009](ADR-AGENT-0009-classes-for-public-api.md) | Classes for the public API, pure functions inside | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0010](ADR-AGENT-0010-no-substitution-table.md) | No tool substitution table | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0011](ADR-AGENT-0011-budget-and-graceful-landing.md) | Budget and graceful landing rather than a hard cutoff | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0012](ADR-AGENT-0012-framework-independence-core-kernel-subpaths.md) | Framework independence: neutral `core` kernel, per-framework subpaths | ✅ Accepted | 2026-07-22 |
+| [ADR-AGENT-0013](ADR-AGENT-0013-llm-port-capabilities-optional-streaming.md) | The LLM port: required capabilities, optional streaming | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0014](ADR-AGENT-0014-configurable-termination-strategy.md) | Termination strategy as a configurable, empirically-decided axis | ✅ Accepted, complements 0003 and 0011 | 2026-07-22 |
 
 ## Upcoming decisions
