@@ -33,6 +33,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 |---|---|
 | V2 provider (tool-call quality / cost per token / latency) | before the 2nd provider's PR |
 | Real `ITokenCounter` implementation (model family) | when the heuristic shows its limits |
+| Memory boundary: transparent `IContextProvider` vs agentic `IMemory` tools | V3 — see docs/theory/2026-07-22-context-memory-and-termination-separation.md |
 | Execution in a container | not before a consumer exposes a shell |
 | User approval before writing | when the IDE repo needs it |
 
