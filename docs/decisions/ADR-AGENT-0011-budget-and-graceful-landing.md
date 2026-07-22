@@ -4,7 +4,7 @@
 - **Date**: 2026-07-21
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
-- **Complements**: [ADR-AGENT-0003](ADR-AGENT-0003-terminaison-boucle-machine-etats.md), whose termination decision (absence of a tool call) stays unchanged. Only the **bounding** mechanism changes.
+- **Complements**: [ADR-AGENT-0003](ADR-AGENT-0003-loop-termination-state-machine.md), whose termination decision (absence of a tool call) stays unchanged. Only the **bounding** mechanism changes.
 
 ## Context
 

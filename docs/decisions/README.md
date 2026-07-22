@@ -14,17 +14,17 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 
 | # | Decision | Status | Date |
 |---|---|---|---|
-| [ADR-AGENT-0001](ADR-AGENT-0001-architecture-hexagonale-use-cases-fonctions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 | 2026-07-21 |
-| [ADR-AGENT-0002](ADR-AGENT-0002-trois-points-entree-outils-a-la-carte.md) | Three entry points, opt-in tools | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0003](ADR-AGENT-0003-terminaison-boucle-machine-etats.md) | Termination by absence of tool call, suspendable state machine | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0004](ADR-AGENT-0004-isolation-politique-execution.md) | Isolation: policy and execution, two composable axes | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0005](ADR-AGENT-0005-agents-typescript-versioning-git.md) | Agents declared in TypeScript, versioning via git | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0006](ADR-AGENT-0006-harnais-simulateur-agnostique.md) | Harness: stateful simulator, runner-agnostic | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0007](ADR-AGENT-0007-metriques-decorateur-portee-instance.md) | Metrics via decorator, per-instance scope | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0008](ADR-AGENT-0008-comptage-jetons-derriere-un-port.md) | Token counting behind a port | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md) | Classes for the public API, pure functions inside | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0010](ADR-AGENT-0010-pas-de-table-de-substitution.md) | No tool substitution table | ✅ Accepted | 2026-07-21 |
-| [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md) | Budget and graceful landing rather than a hard cutoff | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0001](ADR-AGENT-0001-hexagonal-architecture-use-cases-functions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 | 2026-07-21 |
+| [ADR-AGENT-0002](ADR-AGENT-0002-three-entry-points-opt-in-tools.md) | Three entry points, opt-in tools | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0003](ADR-AGENT-0003-loop-termination-state-machine.md) | Termination by absence of tool call, suspendable state machine | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0004](ADR-AGENT-0004-isolation-execution-policy.md) | Isolation: policy and execution, two composable axes | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0005](ADR-AGENT-0005-typescript-agents-git-versioning.md) | Agents declared in TypeScript, versioning via git | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0006](ADR-AGENT-0006-runner-agnostic-simulator-harness.md) | Harness: stateful simulator, runner-agnostic | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0007](ADR-AGENT-0007-metrics-decorator-instance-scope.md) | Metrics via decorator, per-instance scope | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0008](ADR-AGENT-0008-token-counting-behind-a-port.md) | Token counting behind a port | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0009](ADR-AGENT-0009-classes-for-public-api.md) | Classes for the public API, pure functions inside | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0010](ADR-AGENT-0010-no-substitution-table.md) | No tool substitution table | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0011](ADR-AGENT-0011-budget-and-graceful-landing.md) | Budget and graceful landing rather than a hard cutoff | ✅ Accepted | 2026-07-21 |
 
 ## Upcoming decisions
 
