@@ -25,6 +25,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | [ADR-AGENT-0009](ADR-AGENT-0009-classes-for-public-api.md) | Classes for the public API, pure functions inside | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0010](ADR-AGENT-0010-no-substitution-table.md) | No tool substitution table | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0011](ADR-AGENT-0011-budget-and-graceful-landing.md) | Budget and graceful landing rather than a hard cutoff | ✅ Accepted | 2026-07-21 |
+| [ADR-AGENT-0014](ADR-AGENT-0014-configurable-termination-strategy.md) | Termination strategy as a configurable, empirically-decided axis | ✅ Accepted, complements 0003 and 0011 | 2026-07-22 |
 
 ## Upcoming decisions
 
