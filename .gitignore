@@ -11,3 +11,6 @@ dist/
 
 # spec de travail, non versionnée (décision de l'équipe)
 /docs/specs
+
+# scratch local : lecture des tâches JIRA via le package (contient un .env copié)
+/_jira-scratch/
