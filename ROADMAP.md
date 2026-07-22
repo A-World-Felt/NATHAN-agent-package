@@ -41,7 +41,7 @@ Chaque PR ne dépend que des précédentes, et **chaque PR se vérifie**. Détai
 
 | PR | Contenu | Critère de fin |
 |---|---|---|
-| **1** | packaging (3 branches d'`exports`, `tsconfig` ×2) + `models/` + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
+| **1** | packaging (3 branches d'`exports`, `tsconfig` ×2) + `models/` + **arborescence complète** + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
 | **2** | `ILLMProvider` + `OllamaLLMProvider` + **`FakeLLMProvider`** | test déterministe sur le faux ; un appel réel à Ollama, sortie montrée |
 | **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | un historique qui déborde est tronqué ; `observe()` no-op |
 | **4** | `AgenticLLM` (classe) + `step()` (fonction pure) + `ToolDispatcher` | boucle testée **sur le faux** : dispatch, `maxIterations`, `stopReason` |
@@ -101,6 +101,67 @@ Enjeu d'accessibilité : pour une personne non-voyante qui dicte son code, un ag
 2. Le package agentique doit être terminé d'abord (décision de l'équipe).
 
 `stream()` est dans `ILLMProvider` **dès la V1** en prévision : la synthèse vocale voudra parler pendant que le modèle écrit, pas après.
+
+---
+
+## Arborescence complète (carte cible, V1 → V4)
+
+Cette carte fige où **chaque** classe atterrit, toutes versions confondues. Le squelette (dossiers `.gitkeep`) est posé dès la PR1 ; chaque PR y dépose ensuite son code. `[V2]`/`[V3]`/`[V4]` = version d'apparition ; sans tag = V1.
+
+```
+src/
+  index.ts                       point d'entrée « . » — moteur + ports + types, AUCUN fs
+  llm/
+    models/index.ts              Message · ToolCall · ToolResult · LLMResponse · Usage · LLMChunk · LLMError
+    interfaces/ILLMProvider.ts
+    services/response-parser.ts        pur : JSON du provider → LLMResponse
+    providers/
+      ollama/ollama-adapter.ts   OllamaLLMProvider
+      gemini/gemini-adapter.ts   GeminiLLMProvider           [V2]
+      azure/azure-adapter.ts     AzureLLMProvider            [V2]
+      index.ts                   PROVIDERS: Record<ProviderID, () => ILLMProvider>
+    infrastructure/with-metrics.ts     withMetrics (décorateur ILLMProvider → IMetricsCollector)
+  context/
+    interfaces/IContextProvider.ts
+    interfaces/ITokenCounter.ts
+    providers/
+      sliding-window/…           SlidingWindowContext
+      memory/…                   MemoryContextProvider       [V3]
+    infrastructure/heuristic-token-counter.ts   HeuristicTokenCounter
+  tools/
+    models/index.ts              ToolSchema
+    interfaces/ITool.ts
+    application/use-cases/dispatch-tool.ts   dispatchTool (boîte « ToolDispatcher » du schéma)
+    infrastructure/              ReadFile · WriteFile · ListFiles   → exportés par « ./tools »
+  metrics/
+    models/index.ts              UsageRecord · MetricsTotal · RateTable
+    interfaces/IMetricsCollector.ts
+    services/aggregate.ts        pur : records → MetricsTotal (avec RateTable)
+    infrastructure/collector.ts  MetricsCollector
+  voice/                          [V4] — tout le framework
+    interfaces/IVoiceProvider.ts
+    providers/
+      gemini/…                   GeminiVoiceProvider
+      azure/…                    AzureVoiceProvider
+  agent/
+    models/agent-definition.ts   AgentDefinition
+    services/define-agent.ts     defineAgent (pur)
+    services/step.ts             step(state, deps) (pur — une itération)
+    application/dtos/index.ts    AgentDeps · AgentInput · AgentResult · AgentState
+    application/use-cases/agentic-llm.ts        AgenticLLM (classe — API publique)
+    application/use-cases/voice-agentic-llm.ts  VoiceAgenticLLM (classe)   [V4]
+  testing/                        → exporté par « ./testing », jamais en prod
+    fake-llm-provider.ts         FakeLLMProvider (2e implémentation d'ILLMProvider)
+    fake-app.ts · define-scenario.ts · run-scenario.ts · run-matrix.ts
+```
+
+**Même patron dans chaque framework** : `models/` (données) · `interfaces/` (ports `I*`) · `services/` (fonctions pures) · `application/` (dtos + use-cases) · `providers/<vendor>/` et `infrastructure/` (adaptateurs I/O). On apprend un composant, on les connaît tous les six.
+
+**Hors package** : `ExternalLLMProvider` / `ExternalVoiceProvider` (bande « Implémentation Externe » du schéma) sont écrits par le **repo consommateur** derrière les mêmes ports — pas des fichiers d'ici.
+
+**Les 3 points d'entrée** dans cet arbre : `.` = tout sauf `fs` et le faux provider ; `./tools` = les 3 outils fichiers ; `./testing` = le harnais.
+
+**Les 4 bandes du diagramme d'équipe** : Applicatif = `agent/` · Interface = tous les `interfaces/` · Implémentation Locale = `providers/` + `infrastructure/` livrés · Implémentation Externe = le repo consommateur.
 
 ---
 

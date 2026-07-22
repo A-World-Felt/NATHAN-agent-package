@@ -10,7 +10,7 @@
 
 | PR | Contenu | Critère de fin |
 |---|---|---|
-| **1** | packaging + `models/` + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
+| **1** | packaging + `models/` + **arborescence complète** + schéma | `npm run build` produit `dist/` ; `npm install` réussit depuis un repo test |
 | **2** | `ILLMProvider` + `OllamaLLMProvider` + `FakeLLMProvider` | test déterministe sur le faux ; un appel réel à Ollama |
 | **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | troncature vérifiée, `observe()` no-op |
 | **4** | `AgenticLLM` + `step()` + `ToolDispatcher` | boucle testée **sur le faux** : dispatch, `maxIterations`, `stopReason` |
@@ -25,6 +25,8 @@ Puis : intégration dans le repo IDE, et retour ici quand un mur apparaît.
 
 **Ce n'est pas une PR de fichiers vides.** Une arborescence sans contenu ne se vérifie pas : rien ne tourne, rien ne se teste, la revue n'a pas d'objet. Et la structure n'est qu'une hypothèse — on découvrirait en PR2 que la forme est fausse et la moitié serait déplacée.
 
+> **Révision 2026-07-21.** Le périmètre a été élargi : PR1 pose aussi **le squelette complet** de l'arborescence (tous les dossiers, marqués `.gitkeep`, cartographiés dans `ROADMAP.md`). Le raisonnement ci-dessus tient toujours pour le **code** — aucun `index.ts` stub, aucune classe vide. Ce qu'on ajoute, ce sont des **dossiers**, pas des fichiers de code vides : la structure est désormais figée (validée de bout en bout contre la page 5 du schéma et les 4 bandes), donc le risque de déplacement en PR2 est faible ; et le propriétaire veut naviguer l'architecture en dossiers dès le départ. La vérification comportementale (build + install) reste portée par les `models/` et le packaging, comme ci-dessous.
+
 Le vrai jalon est **la chaîne de distribution**, avec le minimum de contenu réel :
 
 - `package.json` — les trois branches d'`exports` (`ADR-AGENT-0002`), `type: module`, `files: ["dist"]`
@@ -33,6 +35,7 @@ Le vrai jalon est **la chaîne de distribution**, avec le minimum de contenu ré
 - `src/llm/models/` — `Message`, `ToolCall`, `ToolResult`, `LLMResponse`, `LLMError`
 - `src/tools/models/` — `ToolSchema`
 - `src/index.ts`
+- **le squelette complet de l'arborescence** (tous les dossiers, `.gitkeep`), cartographié dans `ROADMAP.md`
 - le schéma mis à jour
 
 Les types **sont** le contrat, ils sont purs, et `tsc` les vérifie.
