@@ -14,6 +14,7 @@ Contexte projet : NATHAN Console v2.0, environnement de programmation accessible
 | `docs/specs/2026-07-14-agent-core-design.md` | la conception V1 : contrats, boucle, harnais, écarts vis-à-vis du diagramme. **Non versionnée** (`.gitignore`) — document de travail local. Ce qui doit survivre est dans les ADR. |
 | `docs/plans/2026-07-21-v1-decoupage-pr.md` | le découpage en 6 PR, avec le critère de vérification de chacune |
 | `ROADMAP.md` | les quatre versions et ce qui est repoussé sans date |
+| `CONTRIBUTING.md` | branches, commits, PR — et le fil de traçabilité ticket → code |
 | `docs/schema/Architecture-agent-core.drawio` | **5 pages, à lire dans l'ordre** : vue de l'agent → substitution → une itération → harnais → architecture complète. Voir `docs/schema/README.md`. |
 
 **Contrainte permanente, formulée par l'équipe : pas d'overhead, ça doit rester maintenable.** C'est le critère qui a écarté le cadre de permissions générique, le tokenizer embarqué et le registre runtime.
@@ -223,16 +224,21 @@ Le package **livre le faux provider et le simulateur**. Sans ça, chaque consomm
 
 **Une exécution ne mesure rien.** N répétitions par combinaison, agrégées en taux — sinon un succès unique ne distingue pas un modèle à 95 % d'un modèle à 60 %.
 
-## Conventions de commit
+## Conventions de branches et de commits
 
-Conventional commits (`PMC/CONTEXT-AGENT.md` §11.4) : `type(scope): description`.
+**Source unique : `CONTRIBUTING.md`.** Résumé :
 
 ```
-feat(llm): ajouter OllamaLLMProvider
-fix(agent): stopReason incorrect quand maxIterations atteint
+branche : type/JIRAID-nom-court        feat/DEV-194-package-initialisation
+commit  : type(scope): description (JIRAID)
+          feat(llm): ajouter OllamaLLMProvider (DEV-194)
+PR      : même forme que le commit
 ```
 
-> Ne **pas** reprendre les emojis cuisine de `Marcel/PR_CONVENTIONS.md` : ils sont spécifiques à Marcel.
+Types : `feat` `fix` `refactor` `docs` `test` `chore` `build`
+Scopes : `llm` `context` `tools` `agent` `metrics` `testing` `schema` `docs` `ci`
+
+Règles reprises de `.claude/commands/commit.md` : commits séparés et logiques, jamais `git add -A`, jamais d'`amend`, pas de `Co-Authored-By`, **pas d'emoji**.
 
 ## Règles de sûreté
 
