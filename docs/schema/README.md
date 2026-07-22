@@ -1,39 +1,39 @@
-# Schémas — nathan-agent-core
+# Schemas: nathan-agent-core
 
-## Fichier à lire : `Architecture-agent-core.drawio`
+## File to read: `Architecture-agent-core.drawio`
 
-Cinq pages, **dans l'ordre**. Les quatre premières expliquent la mentalité ; la cinquième donne l'architecture complète. Ouvrir la page 5 en premier, c'est voir des boîtes sans comprendre pourquoi elles sont disposées ainsi.
+Five pages, **in order**. The first four explain the mindset; the fifth gives the complete architecture. Opening page 5 first means seeing boxes without understanding why they are laid out that way.
 
-| Page | Titre | Ce qu'elle fait comprendre |
+| Page | Title | What it makes you understand |
 |---|---|---|
-| **1** | Vue de l'agent | Son univers entier tient dans des messages : un prompt, un historique, une liste de schémas d'outils. Tout le reste est derrière un **mur d'opacité**. Qui contrôle la frontière des outils contrôle sa réalité entière. |
-| **2** | La substitution | Le même agent, deux mondes derrière le même `ITool` : la vraie app, ou le simulateur. **Identiques de son point de vue.** C'est le diagramme qui explique pourquoi on peut tester un agent sans app. |
-| **3** | Une itération | Qui parle à qui, dans quel ordre. Chaque appel d'outil suspend l'agent — c'est cette suspension que le harnais pilote. L'absence d'appel d'outil est le signal d'arrêt. |
-| **4** | Le harnais | Scénarios × axes × répétitions → un rapport. Pourquoi une seule exécution ne mesure rien, pourquoi `env` est une fabrique, pourquoi on garde les échecs. |
-| **5** | Architecture complète | Le diagramme de classes, quatre bandes, 28 classes. À lire en dernier. |
+| **1** | Agent view | Its entire universe fits into messages: a prompt, a history, a list of tool schemas. Everything else is behind a **wall of opacity**. Whoever controls the tool boundary controls its entire reality. |
+| **2** | The substitution | The same agent, two worlds behind the same `ITool`: the real app, or the simulator. **Identical from its point of view.** This is the diagram that explains why we can test an agent without an app. |
+| **3** | One iteration | Who talks to whom, and in what order. Each tool call suspends the agent: it is this suspension that the harness drives. The absence of a tool call is the stop signal. |
+| **4** | The harness | Scenarios × axes × repetitions → a report. Why a single run measures nothing, why `env` is a factory, why we keep the failures. |
+| **5** | Complete architecture | The class diagram, four bands, 28 classes. To be read last. |
 
-## Pourquoi cinq diagrammes
+## Why five diagrams
 
-Un diagramme de classes montre **ce qui existe**, pas **ce qui se passe**. La force de cette architecture est dynamique : l'agent agit sur un monde dont il ignore tout, et c'est cette ignorance qui rend le test possible. Aucune boîte ne dit ça — d'où les pages 1 à 4.
+A class diagram shows **what exists**, not **what happens**. The strength of this architecture is dynamic: the agent acts on a world it knows nothing about, and it is this ignorance that makes testing possible. No box says that: hence pages 1 to 4.
 
-## Notation UML de la page 5
+## UML notation of page 5
 
-| Relation | Trait |
+| Relation | Line |
 |---|---|
-| réalise un port (`OllamaLLMProvider` → `ILLMProvider`) | pointillé + triangle creux |
-| agrégation — détient une référence (`AgenticLLM` ◇→ `ILLMProvider`) | losange creux côté détenteur |
-| dépendance (`Harnais` → `AgenticLLM`) | pointillé + flèche ouverte |
+| realizes a port (`OllamaLLMProvider` → `ILLMProvider`) | dashed + hollow triangle |
+| aggregation, holds a reference (`AgenticLLM` ◇→ `ILLMProvider`) | hollow diamond on the holder side |
+| dependency (`Test harness` → `AgenticLLM`) | dashed + open arrow |
 
-**Le pointillé n'a qu'un sens : la sémantique UML.** Le statut V3/V4 passe uniquement par le remplissage gris et l'étiquette — jamais par le trait. C'était une erreur d'une version précédente, où le pointillé signifiait tantôt « réalise un port », tantôt « pas encore construit ».
+**The dashed line has only one meaning: the UML semantics.** V3/V4 status is conveyed solely by the gray fill and the label, never by the line. That was a mistake of a previous version, where the dashed line sometimes meant "realizes a port", sometimes "not yet built".
 
-## Autres fichiers
+## Other files
 
-| Fichier | Statut |
+| File | Status |
 |---|---|
-| `DiagrammeClasseAI.drawio` | **diagramme d'origine**, conservé tel quel. Référence historique. |
-| `DiagrammeClasseAI-V1.drawio` | variante de l'équipe, non modifiée. |
-| `DiagrammeClasse-agent-core.drawio` | ⚠️ **périmé** — remplacé par la page 5 d'`Architecture-agent-core.drawio`. Ses flèches sont fausses (trait plein pour des réalisations, pointillé à double sens). **À supprimer.** |
+| `DiagrammeClasseAI.drawio` | **original diagram**, kept as is. Historical reference. |
+| `DiagrammeClasseAI-V1.drawio` | team variant, unmodified. |
+| `DiagrammeClasse-agent-core.drawio` | ⚠️ **outdated**: replaced by page 5 of `Architecture-agent-core.drawio`. Its arrows are wrong (solid line for realizations, dashed line in both directions). **To be deleted.** |
 
-## Ce qui n'est pas vérifié
+## What is not verified
 
-Les fichiers sont validés structurellement — XML bien formé, aucune arête orpheline, hauteurs de boîtes cohérentes, aucun chevauchement. **Le rendu visuel ne l'est pas** : le tracé des arêtes orthogonales et le débordement éventuel des textes ne se voient qu'en ouvrant le fichier dans draw.io.
+The files are validated structurally: well-formed XML, no orphan edge, consistent box heights, no overlap. **The visual rendering is not**: the routing of the orthogonal edges and the possible overflow of the texts only show up when opening the file in draw.io.

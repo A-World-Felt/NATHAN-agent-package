@@ -1,77 +1,77 @@
-# Convention d'architecture (nathan-agent-core)
+# Architecture convention (nathan-agent-core)
 
-> Version contributeur des règles d'architecture. Le *pourquoi* détaillé est dans les ADR
-> (`docs/decisions/`), notamment `ADR-AGENT-0001` (hexagonale), `ADR-AGENT-0002` (points
-> d'entrée), `ADR-AGENT-0009` (classes vs fonctions), `ADR-AGENT-0005` (pas de registre).
-> `.claude/CLAUDE.md` en donne la version orientée agent. En cas de doute, l'ADR fait autorité.
+> Contributor version of the architecture rules. The detailed *why* is in the ADRs
+> (`docs/decisions/`), notably `ADR-AGENT-0001` (hexagonal), `ADR-AGENT-0002` (entry
+> points), `ADR-AGENT-0009` (classes vs functions), `ADR-AGENT-0005` (no registry).
+> `.claude/CLAUDE.md` gives the agent-oriented version. When in doubt, the ADR is authoritative.
 
-## Hexagonale : ports et adaptateurs
+## Hexagonal: ports and adapters
 
-Séparation stricte entre contrats et implémentations. **Ce n'est pas une préférence de style : le domaine l'impose.** Presque tout ce que le package expose existe en plusieurs implémentations interchangeables derrière un contrat stable : six ports, une quinzaine d'implémentations. Un package dont la promesse est « le repo consommateur choisit son provider et apporte ses outils » ne peut pas être structuré autrement.
+Strict separation between contracts and implementations. **This is not a style preference: the domain imposes it.** Almost everything the package exposes exists in several interchangeable implementations behind a stable contract: six ports, about fifteen implementations. A package whose promise is "the consumer repo chooses its provider and brings its tools" cannot be structured otherwise.
 
-Les **4 bandes** du diagramme d'équipe sont exactement cette séparation :
+The **4 bands** of the team diagram are exactly this separation:
 
-| Bande | Correspondance dans `src/` |
+| Band | Correspondence in `src/` |
 |---|---|
-| Applicatif | `agent/` |
-| Interface | tous les `interfaces/` (`I*.ts`) |
-| Implémentation Locale | les `providers/` et `infrastructure/` livrés |
-| Implémentation Externe | écrite par le **repo consommateur**, pas ici |
+| Application | `agent/` |
+| Interface | all the `interfaces/` (`I*.ts`) |
+| Local Implementation | the shipped `providers/` and `infrastructure/` |
+| External Implementation | written by the **consumer repo**, not here |
 
-## Les 3 points d'entrée
+## The 3 entry points
 
-| Sous-chemin | Contenu | Contrainte |
+| Subpath | Content | Constraint |
 |---|---|---|
-| `.` | moteur, ports, `defineAgent` | **aucun accès disque**, importable partout |
-| `./tools` | outils génériques fournis | opt-in, couplé à `fs` |
-| `./testing` | harnais de test | ne doit **jamais** partir en production |
+| `.` | engine, ports, `defineAgent` | **no disk access**, importable everywhere |
+| `./tools` | generic tools provided | opt-in, coupled to `fs` |
+| `./testing` | test harness | must **never** ship to production |
 
-Les outils sont **à la carte** : un agent reçoit exactement les outils qu'on lui passe, rien d'implicite. Si les outils fichiers étaient dans le baril principal, importer le package traînerait `fs` derrière lui. Rien de `./testing` ne doit être atteignable depuis `.` ou `./tools`.
+Tools are **opt-in**: an agent receives exactly the tools it is passed, nothing implicit. If the file tools were in the main barrel, importing the package would drag `fs` along behind it. Nothing in `./testing` must be reachable from `.` or `./tools`.
 
-## Couches internes par framework
+## Internal layers per framework
 
-Chaque framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) suit le **même patron** (on apprend un composant, on les connaît tous) :
+Each framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) follows the **same pattern** (learn one component, you know them all):
 
 ```
 <framework>/
-  models/            entités, types, enums : aucune dépendance runtime, aucun import SDK
-  interfaces/        ports I*.ts (contrats seulement)
-  services/          fonctions PURES, n'importe JAMAIS interfaces/
+  models/            entities, types, enums: no runtime dependency, no SDK import
+  interfaces/        ports I*.ts (contracts only)
+  services/          PURE functions, NEVER import interfaces/
   application/
     dtos/            Deps, Input, Result, Options
-    use-cases/       orchestration UNIQUEMENT
-  providers/<vendor>/  adaptateurs concrets par fournisseur
-  infrastructure/    autres adaptateurs concrets (I/O réel)
+    use-cases/       orchestration ONLY
+  providers/<vendor>/  concrete adapters per provider
+  infrastructure/    other concrete adapters (real I/O)
 ```
 
-`context/` est un **framework à part entière**, pas un sous-dossier de `agent/` : fenêtre glissante et mémoire sont deux providers d'un même port `IContextProvider`.
+`context/` is a **full-fledged framework**, not a subfolder of `agent/`: sliding window and memory are two providers of one same `IContextProvider` port.
 
-## Règle de placement (arbre de décision par fichier)
+## Placement rule (per-file decision tree)
 
-1. Type/interface décrivant une **donnée** → `models/`
-2. Interface décrivant un **port** (`I<X>`) → `interfaces/`
-3. Fonction **pure** (ni disque, ni HTTP, ni SDK) → `services/`
-4. Fonction qui prend un port et **orchestre** → `application/use-cases/`
-5. Classe implémentant un port via de l'**I/O réel** → `providers/<vendor>/` ou `infrastructure/`
+1. Type/interface describing **data** → `models/`
+2. Interface describing a **port** (`I<X>`) → `interfaces/`
+3. **Pure** function (no disk, no HTTP, no SDK) → `services/`
+4. Function that takes a port and **orchestrates** → `application/use-cases/`
+5. Class implementing a port via **real I/O** → `providers/<vendor>/` or `infrastructure/`
 
-Invariants qu'une revue traite comme de vrais problèmes :
+Invariants that a review treats as real problems:
 
-- `models/` : types seulement, aucun import de SDK, aucune dépendance runtime.
-- `services/` : fonctions pures, **ne doit jamais importer `interfaces/`**.
-- le baril `.` ne doit **jamais** importer `fs`/`path` ni rien de disque.
+- `models/`: types only, no SDK import, no runtime dependency.
+- `services/`: pure functions, **must never import `interfaces/`**.
+- the `.` barrel must **never** import `fs`/`path` or anything disk-related.
 
-## Classes vs fonctions
+## Classes vs functions
 
-| Nature | Forme | Exemples |
+| Nature | Form | Examples |
 |---|---|---|
-| **API publique** avec état et plusieurs opérations | **classe** | `AgenticLLM`, `VoiceAgenticLLM` |
-| Adaptateur implémentant un port via de l'I/O | classe | `OllamaLLMProvider`, `SlidingWindowContext`, les outils |
-| Fonction pure d'orchestration ou de calcul | fonction | `step`, `dispatchTool`, `defineAgent`, agrégation |
+| **Public API** with state and several operations | **class** | `AgenticLLM`, `VoiceAgenticLLM` |
+| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowContext`, the tools |
+| Pure orchestration or computation function | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
 
-L'API publique est une **classe** (elle offre l'autocomplétion `agent.` qu'une fabrique n'expose pas, `ADR-AGENT-0009`) ; sa mécanique est une **fonction pure** testable sans instancier la classe. `AgenticLLM.run()` enroule `step(state, deps)`.
+The public API is a **class** (it offers the `agent.` autocompletion that a factory does not expose, `ADR-AGENT-0009`); its mechanics are a **pure function** testable without instantiating the class. `AgenticLLM.run()` wraps `step(state, deps)`.
 
-## Pas de registre runtime
+## No runtime registry
 
-`defineAgent()` est une fonction pure qui retourne un objet typé. Les agents sont des `const` exportés, importés **statiquement**. Aucune recherche par nom, aucune clé `string` non typée.
+`defineAgent()` is a pure function that returns a typed object. Agents are exported `const`s, imported **statically**. No lookup by name, no untyped `string` key.
 
-> **Si une clé est une chaîne, elle doit être typée.** Le mode de panne à éviter (observé en production ailleurs) : une union réelle qui ne vit que dans un commentaire (`feature: string; // 'a' | 'b' | …`) dérive en quelques mois. Forme correcte : `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, union fermée, typée. Voir `ADR-AGENT-0005`.
+> **If a key is a string, it must be typed.** The failure mode to avoid (observed in production elsewhere): a real union that lives only in a comment (`feature: string; // 'a' | 'b' | …`) drifts within a few months. Correct form: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed, typed union. See `ADR-AGENT-0005`.
