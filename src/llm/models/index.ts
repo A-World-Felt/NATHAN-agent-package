@@ -1,13 +1,13 @@
-// Modèles du framework LLM.
-// Types purs : aucune dépendance runtime, aucun import de SDK (règle de placement, CLAUDE.md).
+// LLM framework models.
+// Pure types: no runtime dependency, no SDK import (placement rule, CLAUDE.md).
 
-/** Rôle d'un message dans la conversation envoyée au modèle. */
+/** Role of a message in the conversation sent to the model. */
 export type Role = "system" | "user" | "assistant" | "tool";
 
 /**
- * Un message de la conversation.
- * - `assistant` peut porter des `toolCalls` : le modèle demande des outils.
- * - `tool` répond à un appel précis, référencé par `toolCallId`.
+ * A message in the conversation.
+ * - `assistant` may carry `toolCalls`: the model requests tools.
+ * - `tool` answers a specific call, referenced by `toolCallId`.
  */
 export type Message = {
   role: Role;
@@ -16,7 +16,7 @@ export type Message = {
   toolCallId?: string;
 };
 
-/** Le modèle demande l'exécution d'un outil. `arguments` est déjà parsé en objet. */
+/** The model requests a tool execution. `arguments` is already parsed into an object. */
 export type ToolCall = {
   id: string;
   name: string;
@@ -24,9 +24,9 @@ export type ToolCall = {
 };
 
 /**
- * Résultat d'un outil, réinjecté dans la conversation.
- * Un outil qui échoue renvoie un `ToolResult` avec `isError: true` — il ne LÈVE pas,
- * pour ne pas faire tomber la boucle (règle de sûreté, CLAUDE.md).
+ * Result of a tool, fed back into the conversation.
+ * A tool that fails returns a `ToolResult` with `isError: true`; it does NOT throw,
+ * so it does not bring down the loop (safety rule, CLAUDE.md).
  */
 export type ToolResult = {
   toolCallId: string;
@@ -34,16 +34,16 @@ export type ToolResult = {
   isError: boolean;
 };
 
-/** Comptage de jetons d'un appel. Absent (et non zéro) quand le provider ne le fournit pas. */
+/** Token count for a call. Absent (not zero) when the provider does not supply it. */
 export type Usage = {
   tokensIn: number;
   tokensOut: number;
 };
 
 /**
- * Réponse du modèle à un appel.
- * `toolCalls` vide EST le signal d'arrêt de la boucle (ADR-AGENT-0003).
- * `usage` porte le coût ; rempli dès qu'un provider le fournit (ADR-AGENT-0007).
+ * Model response to a call.
+ * An empty `toolCalls` IS the loop's stop signal (ADR-AGENT-0003).
+ * `usage` carries the cost; filled in as soon as a provider supplies it (ADR-AGENT-0007).
  */
 export type LLMResponse = {
   content: string;
@@ -51,12 +51,12 @@ export type LLMResponse = {
   usage?: Usage;
 };
 
-/** Codes d'erreur remontés par un provider. Union fermée : une clé chaîne doit être typée. */
+/** Error codes surfaced by a provider. Closed union: a string key must be typed. */
 export type LLMErrorCode = "MISSING_API_KEY" | "API_ERROR" | "UNKNOWN_PROVIDER";
 
 /**
- * Erreur de provider. Contrairement à un échec d'outil, elle REMONTE (CLAUDE.md).
- * Le `code` permet de distinguer les cas sans parser le message.
+ * Provider error. Unlike a tool failure, it propagates up (CLAUDE.md).
+ * The `code` lets you distinguish cases without parsing the message.
  */
 export class LLMError extends Error {
   readonly code: LLMErrorCode;
