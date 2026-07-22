@@ -4,7 +4,7 @@
 - **Date**: 2026-07-21
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
-- **Complemented by**: [ADR-AGENT-0009](ADR-AGENT-0009-classes-pour-api-publique.md): classes for the public API, pure functions inside.
+- **Complemented by**: [ADR-AGENT-0009](ADR-AGENT-0009-classes-for-public-api.md): classes for the public API, pure functions inside.
 
 > **Revision note (2026-07-21).** The rationale for this ADR was rewritten the same day it was written, before any commit and before any line of code. The initial version justified the decision as "reusing Marcel's convention", a citation that was both inaccurate and pointless: the team does not know Marcel, it is not the package's consumer, and the decision follows from the domain. The **decision is unchanged**; only its rationale is corrected.
 

@@ -13,4 +13,4 @@ dist/
 /docs/specs
 
 # scratch local : lecture des tâches JIRA via le package (contient un .env copié)
-/_jira-scratch/
+_jira-scratch/

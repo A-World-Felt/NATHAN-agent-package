@@ -4,7 +4,7 @@
 - **Date**: 2026-07-21
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
-- **Complemented by**: [ADR-AGENT-0011](ADR-AGENT-0011-budget-et-atterrissage-gracieux.md): bounding is no longer a hard cutoff on `maxIterations` but a composite budget that triggers a **graceful landing**. `stopReason` becomes `"completed" | "budget" | "stuck" | "error"`. The termination decision below (absence of tool call) is unchanged.
+- **Complemented by**: [ADR-AGENT-0011](ADR-AGENT-0011-budget-and-graceful-landing.md): bounding is no longer a hard cutoff on `maxIterations` but a composite budget that triggers a **graceful landing**. `stopReason` becomes `"completed" | "budget" | "stuck" | "error"`. The termination decision below (absence of tool call) is unchanged.
 
 ## Context
 
