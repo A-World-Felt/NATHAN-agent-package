@@ -1,5 +1,8 @@
 // LLM framework models.
 // Pure types: no runtime dependency, no SDK import (placement rule, CLAUDE.md).
+// The shared parameter schema lives in the neutral core kernel (ADR-AGENT-0012).
+
+import type { ToolSchema } from "../../core/models/index.js";
 
 /** Role of a message in the conversation sent to the model. */
 export type Role = "system" | "user" | "assistant" | "tool";
@@ -23,14 +26,13 @@ export type ToolCall = {
 };
 
 /**
- * Result of a tool, fed back into the conversation.
- * A tool that fails returns a `ToolResult` with `isError: true`; it does NOT throw,
- * so it does not bring down the loop (safety rule, CLAUDE.md).
+ * A tool as presented to the model: name + description + parameter schema.
+ * llm owns this face-to-model contract (ADR-AGENT-0012); the agent builds it from an ITool.
  */
-export type ToolResult = {
-  toolCallId: string;
-  content: string;
-  isError: boolean;
+export type ToolDefinition = {
+  name: string;
+  description: string;
+  parameters: ToolSchema;
 };
 
 /** Token count for a call. Absent (not zero) when the provider does not supply it. */
@@ -50,8 +52,23 @@ export type LLMResponse = {
   usage?: Usage;
 };
 
+/**
+ * One chunk of a streamed response (ADR-AGENT-0013). Low-level shape, validated against
+ * the real Ollama endpoint: a text delta, and usage on the terminal `done` chunk.
+ * Streaming tool-calls is a V4 concern; this type may gain fields additively then.
+ */
+export type LLMChunk = {
+  contentDelta: string;
+  done: boolean;
+  usage?: Usage;
+};
+
 /** Error codes surfaced by a provider. Closed union: a string key must be typed. */
-export type LLMErrorCode = "MISSING_API_KEY" | "API_ERROR" | "UNKNOWN_PROVIDER";
+export type LLMErrorCode =
+  | "MISSING_API_KEY"
+  | "API_ERROR"
+  | "UNKNOWN_PROVIDER"
+  | "STREAMING_UNSUPPORTED";
 
 /**
  * Provider error. Unlike a tool failure, it propagates up (CLAUDE.md).
