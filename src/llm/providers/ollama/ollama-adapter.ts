@@ -9,6 +9,7 @@ import type {
   Usage,
 } from "../../models/index.js";
 
+/** The injectable fetch contract: the real global fetch in prod, a fake in tests — the seam that keeps the adapter testable offline. */
 type FetchLike = typeof fetch;
 
 export type OllamaConfig = {
@@ -42,7 +43,6 @@ export class OllamaLLMProvider implements ILLMProvider {
   readonly model: string;
   private readonly baseURL: string;
   private readonly toolsSupported: boolean;
-  /** The fetch actually invoked: an injected fake in tests, the global fetch otherwise — the seam that keeps the adapter testable offline. */
   private readonly fetchFn: FetchLike;
 
   constructor(config: OllamaConfig) {
