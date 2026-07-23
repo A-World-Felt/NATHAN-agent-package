@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./llm": {
+      "types": "./dist/llm/index.d.ts",
+      "default": "./dist/llm/index.js"
+    },
     "./tools": {
       "types": "./dist/tools/infrastructure/index.d.ts",
       "default": "./dist/tools/infrastructure/index.js"
@@ -29,7 +33,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "node --test",
+    "test": "npm run build && node --test",
     "prepare": "npm run build"
   },
   "devDependencies": {
