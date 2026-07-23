@@ -12,5 +12,9 @@ dist/
 # spec de travail, non versionnée (décision de l'équipe)
 /docs/specs
 
+# plans de travail, non versionnés : documents locaux (comme les specs) ;
+# ce qui doit survivre vit dans les ADRs et le code
+/docs/plans
+
 # scratch local : lecture des tâches JIRA via le package (contient un .env copié)
 _jira-scratch/
