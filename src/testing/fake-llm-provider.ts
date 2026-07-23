@@ -10,7 +10,7 @@ export type FakeConfig = {
 
 /**
  * Scripted, deterministic provider (ADR-AGENT-0013). The second implementation of the port:
- * it validates the interface and drives the loop tests of PR4 without a network.
+ * it validates the interface and drives the loop tests without a network.
  * It records every call so a test can assert what the loop sent (e.g. "the last call had no tools").
  */
 export class FakeLLMProvider implements ILLMProvider {
