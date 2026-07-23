@@ -74,3 +74,32 @@ test("stream() yields deltas then a terminal chunk with usage", async () => {
   assert.equal(chunks[0].usage, undefined);
   assert.deepEqual(chunks[2].usage, { tokensIn: 36, tokensOut: 26 });
 });
+
+const encoder = new TextEncoder();
+// A fetch whose response body streams the given string pieces as separate byte chunks,
+// so a test controls exactly where reads split — including mid-line and no trailing newline.
+const chunkedFetch = (pieces: string[]): typeof fetch =>
+  (async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          for (const piece of pieces) controller.enqueue(encoder.encode(piece));
+          controller.close();
+        },
+      }),
+      { status: 200 },
+    )) as unknown as typeof fetch;
+
+test("stream() reassembles a line split across reads and a final line with no trailing newline", async () => {
+  const pieces = [
+    '{"message":{"role":"assistant","content":"Su',                                       // line 1, cut mid-object
+    're"},"done":false}\n{"message":{"role":"assistant","content":"!"},"done":false}\n',   // rest of line 1 + full line 2
+    '{"message":{"role":"assistant","content":""},"done":true,"prompt_eval_count":36,"eval_count":26}', // final line, NO trailing newline
+  ];
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: chunkedFetch(pieces) });
+  const chunks = [];
+  for await (const c of p.stream!([{ role: "user", content: "count" }])) chunks.push(c);
+  assert.deepEqual(chunks.map((c) => c.contentDelta), ["Sure", "!", ""]);
+  assert.deepEqual(chunks.map((c) => c.done), [false, false, true]);
+  assert.deepEqual(chunks[2].usage, { tokensIn: 36, tokensOut: 26 });
+});
