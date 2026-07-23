@@ -5,6 +5,7 @@ import type {
   ToolCall,
   ToolDefinition,
   LLMResponse,
+  LLMChunk,
   Usage,
 } from "../../models/index.js";
 
@@ -69,6 +70,21 @@ export class OllamaLLMProvider implements ILLMProvider {
     };
   }
 
+  async *stream(messages: Message[], tools?: ToolDefinition[]): AsyncIterable<LLMChunk> {
+    const res = await this.post(messages, tools, true);
+    if (!res.body) {
+      throw new LLMError("API_ERROR", "Ollama streaming response has no body");
+    }
+    for await (const line of readNdjson(res.body)) {
+      const chunk = JSON.parse(line) as OllamaChatChunk;
+      yield {
+        contentDelta: chunk.message?.content ?? "",
+        done: chunk.done,
+        usage: chunk.done ? toUsage(chunk) : undefined,
+      };
+    }
+  }
+
   private async post(messages: Message[], tools: ToolDefinition[] | undefined, stream: boolean): Promise<Response> {
     let res: Response;
     try {
@@ -118,4 +134,23 @@ function toUsage(chunk: OllamaChatChunk): Usage | undefined {
     return undefined;
   }
   return { tokensIn: chunk.prompt_eval_count, tokensOut: chunk.eval_count };
+}
+
+async function* readNdjson(body: ReadableStream<Uint8Array>): AsyncIterable<string> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (line) yield line;
+    }
+  }
+  const last = buffer.trim();
+  if (last) yield last;
 }

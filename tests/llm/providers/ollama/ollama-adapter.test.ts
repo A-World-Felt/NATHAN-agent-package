@@ -57,3 +57,20 @@ test("capabilities: streaming always true, tools default true, overridable", () 
   assert.equal(new OllamaLLMProvider({ model: "m" }).supportsTools(), true);
   assert.equal(new OllamaLLMProvider({ model: "m", supportsTools: false }).supportsTools(), false);
 });
+
+const STREAM_NDJSON =
+  '{"message":{"role":"assistant","content":"Su"},"done":false}\n' +
+  '{"message":{"role":"assistant","content":"re"},"done":false}\n' +
+  '{"message":{"role":"assistant","content":""},"done":true,"prompt_eval_count":36,"eval_count":26}\n';
+
+test("stream() yields deltas then a terminal chunk with usage", async () => {
+  const streamingFetch = (async () => new Response(STREAM_NDJSON, { status: 200 })) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: streamingFetch });
+  assert.ok(p.stream, "stream must be defined");
+  const chunks = [];
+  for await (const c of p.stream!([{ role: "user", content: "count" }])) chunks.push(c);
+  assert.deepEqual(chunks.map((c) => c.contentDelta), ["Su", "re", ""]);
+  assert.deepEqual(chunks.map((c) => c.done), [false, false, true]);
+  assert.equal(chunks[0].usage, undefined);
+  assert.deepEqual(chunks[2].usage, { tokensIn: 36, tokensOut: 26 });
+});
