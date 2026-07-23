@@ -42,6 +42,7 @@ export class OllamaLLMProvider implements ILLMProvider {
   readonly model: string;
   private readonly baseURL: string;
   private readonly toolsSupported: boolean;
+  /** The fetch actually invoked: an injected fake in tests, the global fetch otherwise — the seam that keeps the adapter testable offline. */
   private readonly fetchFn: FetchLike;
 
   constructor(config: OllamaConfig) {
