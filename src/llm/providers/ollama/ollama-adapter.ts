@@ -123,7 +123,8 @@ function toRequestTool(t: ToolDefinition) {
 }
 
 function toToolCalls(calls: OllamaToolCall[] | undefined): ToolCall[] {
-  return (calls ?? []).map((c, i) => ({
+  if (calls === undefined) return [];
+  return calls.map((c, i) => ({
     id: c.id ?? `call_${i}`,
     name: c.function.name,
     arguments: c.function.arguments,
