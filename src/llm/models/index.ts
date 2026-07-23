@@ -5,16 +5,15 @@
 export type Role = "system" | "user" | "assistant" | "tool";
 
 /**
- * A message in the conversation.
- * - `assistant` may carry `toolCalls`: the model requests tools.
- * - `tool` answers a specific call, referenced by `toolCallId`.
+ * A message in the conversation. The role fixes which fields are valid,
+ * so illegal combinations (a `user` carrying `toolCalls`, a `tool` without
+ * its `toolCallId`) do not typecheck.
  */
-export type Message = {
-  role: Role;
-  content: string;
-  toolCalls?: ToolCall[];
-  toolCallId?: string;
-};
+export type Message =
+  | { role: "system"; content: string }
+  | { role: "user"; content: string }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
+  | { role: "tool"; content: string; toolCallId: string };
 
 /** The model requests a tool execution. `arguments` is already parsed into an object. */
 export type ToolCall = {
