@@ -183,6 +183,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. Valuable for a package: an export removed by mistake breaks a test, not a consumer.
 - Simple, readable code: no sophisticated generics for a one-off case.
 - Comment non-obvious logic (prompts, transformations).
+- For an optional collection, prefer an explicit early return over folding the guard into the expression: `if (xs === undefined) return [];` then map, rather than `(xs ?? []).map(...)`. Easier to read and to maintain.
 
 ## Packaging conventions
 
