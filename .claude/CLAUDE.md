@@ -13,7 +13,7 @@ Project context: NATHAN Console v2.0, an AI voice-assisted accessible programmin
 | `docs/decisions/` | **the ADRs**: context, options evaluated, decision, consequences. Read before challenging a choice. |
 | `docs/theory/` | **reference material** the ADRs rest on: provider/API research, non-decisional. Versioned. Each doc names its verification status and cites its sources. |
 | `docs/specs/2026-07-14-agent-core-design.md` | the V1 design: contracts, loop, harness, deviations from the diagram. **Not versioned** (`.gitignore`): a local working document. What must survive lives in the ADRs. |
-| `docs/plans/2026-07-21-v1-decoupage-pr.md` | the split into 6 PRs, with the verification criterion for each |
+| `docs/plans/` | implementation plans. **Not versioned** (`.gitignore`), local working documents like the spec; what must survive lives in the ADRs. The V1 split into 6 PRs and the per-ticket plans live here. |
 | `ROADMAP.md` | the four versions and what is deferred without a date |
 | `CONTRIBUTING.md` | branches, commits, PRs, and the ticket → code traceability thread |
 | `docs/schema/Architecture-agent-core.drawio` | **5 pages, read in order**: agent view → substitution → one iteration → harness → full architecture. See `docs/schema/README.md`. |
@@ -25,6 +25,7 @@ Project context: NATHAN Console v2.0, an AI voice-assisted accessible programmin
 - Respond **in French**.
 - Direct and concise: no filler, no hedging.
 - No final summary: the diff speaks for itself.
+- No em-dashes (`—`): not in written deliverables (README, docs, code comments) nor in replies. Use `:`, `,`, `(...)`, or a period. Em-dashes read as machine-generated.
 
 ## What this package is not
 
@@ -188,12 +189,13 @@ The real union lives in the comment. Result: the list drifted within a few month
 
 - TypeScript strict: no `any` without a justifying comment.
 - Files in `kebab-case.ts`, named after their main export (`ollama-llm-provider.ts` holds `OllamaLLMProvider`).
-- **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun — `LLMProvider` in `llm-provider.ts` — and implementations carry descriptive names (`OllamaLLMProvider`, `FakeLLMProvider`). The structural type system makes the `I` marker unnecessary.
+- **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `FakeLLMProvider`). The structural type system makes the `I` marker unnecessary.
 - A barrel `index.ts` per layer; consumers import from the barrel, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. Valuable for a package: an export removed by mistake breaks a test, not a consumer.
 - Simple, readable code: no sophisticated generics for a one-off case.
 - Comment non-obvious logic (prompts, transformations).
 - For an optional collection, prefer an explicit early return over folding the guard into the expression: `if (xs === undefined) return [];` then map, rather than `(xs ?? []).map(...)`. Easier to read and to maintain.
+- **No PR references in code comments** (nor in a plan's code blocks): a PR number is a transient label that rots once merged. Describe what the code does, not which PR added it.
 
 ## Packaging conventions
 
