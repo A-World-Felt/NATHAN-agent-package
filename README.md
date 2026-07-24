@@ -73,16 +73,16 @@ Four subpaths, **opt-in**: an agent receives only what you pass it, nothing impl
 | `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
 | `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.1.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton — **do not import `./tools` before the PR that fills it in.**
+> In `0.1.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
 
 ### What `.` exports
 
-`.` re-exports the full `./llm` engine barrel plus `ToolResult` — the umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives the same surface standalone). It exposes:
+`.` re-exports the full `./llm` engine barrel plus `ToolResult`. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives the same surface standalone). It exposes:
 
 - **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
 - **Engine**: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry and `resolveProvider`, and the `LLMError` class.
 
-No disk access reaches `.` — it stays importable everywhere (`ADR-AGENT-0002`).
+No disk access reaches `.`, so it stays importable everywhere (`ADR-AGENT-0002`).
 
 ### Minimal example
 
@@ -137,7 +137,7 @@ for await (const chunk of provider.stream(messages)) {
 
 ### The provider registry
 
-For **env-driven** selection, the registry maps a typed provider id to a factory (a string key must be typed — no untyped lookup):
+For **env-driven** selection, the registry maps a typed provider id to a factory (a string key must be typed, no untyped lookup):
 
 ```ts
 import { PROVIDERS, resolveProvider } from "@a-world-felt/nathan-agent-core/llm";
@@ -153,7 +153,7 @@ const b = resolveProvider(process.env.LLM_PROVIDER ?? "ollama");
 
 ### Verifying a provider
 
-Bringing your own provider? `./testing` ships a **runner-agnostic** conformance check: it runs the port's happy path and returns a report. It never throws on a failed check and never couples to a test runner — you assert on the result with whatever you use.
+Bringing your own provider? `./testing` ships a **runner-agnostic** conformance check: it runs the port's happy path and returns a report. It never throws on a failed check and never couples to a test runner: you assert on the result with whatever you use.
 
 ```ts
 import { checkProviderContract } from "@a-world-felt/nathan-agent-core/testing";
@@ -169,7 +169,7 @@ if (!report.ok) console.error(report.checks.filter((c) => !c.ok));
 `OllamaLLMProvider` talks to a local [Ollama](https://ollama.com) server over HTTP.
 
 1. Install Ollama (see the official site).
-2. Pull a model: `ollama pull qwen2.5:0.5b` (small, tool-capable — the default).
+2. Pull a model: `ollama pull qwen2.5:0.5b` (small, tool-capable, the default).
 3. Ollama serves on `http://localhost:11434` by default.
 
 Two environment variables configure the Ollama path:
@@ -187,7 +187,7 @@ The library reads `process.env`; the consuming application loads its `.env` (e.g
 
 **A library does not read a config file.** It reads `process.env`; it is the **consuming application** that loads its `.env` (e.g. via `dotenv` in its entry point). This package never loads a `.env` on import: doing so would inject variables into the consumer's `process.env`, which is not a library's role.
 
-API keys and provider URLs therefore go **through the consumer's environment**, never hardcoded, never committed. The variables the LLM layer reads today are **`OLLAMA_HOST`** (default `http://localhost:11434`) and **`OLLAMA_MODEL`** (default `qwen2.5:0.5b`) — see [Setting up Ollama](#setting-up-ollama).
+API keys and provider URLs therefore go **through the consumer's environment**, never hardcoded, never committed. The variables the LLM layer reads today are **`OLLAMA_HOST`** (default `http://localhost:11434`) and **`OLLAMA_MODEL`** (default `qwen2.5:0.5b`). See [Setting up Ollama](#setting-up-ollama).
 
 ---
 
