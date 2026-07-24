@@ -1,5 +1,5 @@
-import type { LLMProvider } from "../llm/interfaces/index.js";
-import type { Message, ToolDefinition, LLMResponse } from "../llm/models/index.js";
+import type { LLMProvider } from "../interfaces/index.js";
+import type { Message, ToolDefinition, LLMResponse } from "../models/index.js";
 
 export type FakeConfig = {
   model?: string;

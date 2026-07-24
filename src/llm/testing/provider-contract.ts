@@ -1,4 +1,4 @@
-import type { LLMProvider } from "../llm/interfaces/index.js";
+import type { LLMProvider } from "../interfaces/index.js";
 
 /** One invariant of the port, checked in isolation. `detail` is filled only on failure. */
 export type ContractCheck = { name: string; ok: boolean; detail?: string };
