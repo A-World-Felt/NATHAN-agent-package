@@ -10,7 +10,7 @@ import type {
  * Capabilities are required methods: the type system forces every implementer to
  * declare them (impossible to forget). Streaming is an optional capability.
  */
-export interface ILLMProvider {
+export interface LLMProvider {
   /** Join key for rate tables (ADR-AGENT-0007). One instance = one model. */
   readonly model: string;
   /** Does this model support tool/function calling? */

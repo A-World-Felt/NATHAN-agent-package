@@ -1,5 +1,5 @@
 import { LLMError } from "../../models/index.js";
-import type { ILLMProvider } from "../../interfaces/index.js";
+import type { LLMProvider } from "../../interfaces/index.js";
 import type {
   Message,
   ToolCall,
@@ -39,7 +39,7 @@ type OllamaRequestMessage = {
   tool_calls?: { function: { name: string; arguments: Record<string, unknown> } }[];
 };
 
-export class OllamaLLMProvider implements ILLMProvider {
+export class OllamaLLMProvider implements LLMProvider {
   readonly model: string;
   private readonly baseURL: string;
   private readonly toolsSupported: boolean;

@@ -1,4 +1,4 @@
-import type { ILLMProvider } from "../llm/interfaces/index.js";
+import type { LLMProvider } from "../llm/interfaces/index.js";
 import type { Message, ToolDefinition, LLMResponse } from "../llm/models/index.js";
 
 export type FakeConfig = {
@@ -13,7 +13,7 @@ export type FakeConfig = {
  * it validates the interface and drives the loop tests without a network.
  * It records every call so a test can assert what the loop sent (e.g. "the last call had no tools").
  */
-export class FakeLLMProvider implements ILLMProvider {
+export class FakeLLMProvider implements LLMProvider {
   readonly model: string;
   readonly calls: { messages: Message[]; tools?: ToolDefinition[] }[] = [];
   private readonly toolsSupported: boolean;
