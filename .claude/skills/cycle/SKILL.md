@@ -94,7 +94,7 @@ Then **STOP and hand off** — do not push, do not open a PR:
 Plan <plan path> complete: <N> tasks, all judge-approved, full suite green.
 Commits on <branch>:
   <oneline list>
-Ready for you to push and open the PR (your teammates review). The manual Ollama eval output to paste into the PR is in <evals path>, run: npm run build && node evals/ollama-smoke.mjs
+Ready for you to push and open the PR (your teammates review). For the real-Ollama check, run the gated integration test with Ollama up: OLLAMA_INTEGRATION=1 npm test — paste its output into the PR.
 ```
 
 ## Rules
