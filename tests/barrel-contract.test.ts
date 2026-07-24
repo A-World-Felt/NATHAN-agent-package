@@ -16,6 +16,7 @@ test("`./llm` exposes the llm layer standalone (incl. core types at runtime it r
   assert.equal(typeof llm.PROVIDERS, "object");
 });
 
-test("`./testing` exposes the fake", () => {
+test("`./testing` exposes the fake and the provider contract check", () => {
   assert.equal(typeof testing.FakeLLMProvider, "function");
+  assert.equal(typeof testing.checkProviderContract, "function");
 });
