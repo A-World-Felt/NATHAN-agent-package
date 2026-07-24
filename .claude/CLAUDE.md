@@ -71,6 +71,10 @@ src/
     providers/
       ollama/ollama-llm-provider.ts    OllamaLLMProvider, a CLASS (real I/O)
       index.ts                    PROVIDERS: Record<ProviderID, () => LLMProvider>
+    testing/                      shipped test tooling (→ ./testing, never ./llm)
+      fake-llm-provider.ts          scripted provider, 2nd implementation of the port
+      provider-contract.ts          checkProviderContract, runner-agnostic conformance
+      index.ts
     index.ts
 
   context/                      # peer framework, 2 providers, 1 contract
@@ -104,20 +108,23 @@ src/
       dtos/index.ts               AgentDeps, AgentInput, AgentResult, AgentState
       use-cases/agentic-llm.ts    AgenticLLM, a CLASS (public API)
       use-cases/voice-agentic-llm.ts   VoiceAgenticLLM (V4)
+    testing/                      the agent test harness (→ ./testing); names TBD
+      fake-app.ts                   shared-state simulator (≠ mock)
+      define-scenario.ts
+      run-scenario.ts
+      run-matrix.ts
+      index.ts
     index.ts
 
-  testing/                      # ./testing branch
-    fake-llm-provider.ts          delivered as of PR2, 2nd implementation of the port
-    fake-app.ts                   shared-state simulator (≠ mock)
-    define-scenario.ts
-    run-scenario.ts
-    run-matrix.ts
-    index.ts
+  testing/                      # ./testing branch: aggregates each framework's testing/
+    index.ts                      re-exports llm/testing (+ agent/testing when it lands)
 ```
 
 `llm/infrastructure/with-metrics.ts`: a decorator that implements `LLMProvider` and relays to a `MetricsCollector`. It lives where it wraps.
 
 `context/` is a **framework in its own right**, not a subfolder of `agent/`: Marcel's rule, "MANY providers serve ONE contract → nested per-vendor". Sliding window and memory are two providers of the same port.
+
+`testing/` is **not** a top-level framework. Shipped test tooling co-locates under each framework's own `testing/` subfolder (`llm/testing/`, later `agent/testing/`) because it is that framework's functionality, not a cross-cutting concern. The top-level `testing/index.ts` only **aggregates** them behind the one `./testing` subpath. A framework's production barrel never exports its `testing/`, so the tooling reaches consumers through `./testing` only, never through `.` or `./llm`.
 
 ### Internal layers per framework
 
@@ -133,6 +140,7 @@ Each framework follows the same pattern:
     use-cases/       orchestration ONLY
   providers/<vendor>/  concrete adapters per provider
   infrastructure/    other concrete adapters (real I/O)
+  testing/           shipped test tooling for this framework (→ ./testing, never the prod barrel)
 ```
 
 ### Placement rule (per-file decision tree)
@@ -142,6 +150,7 @@ Each framework follows the same pattern:
 3. Pure function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and orchestrates → `application/use-cases/`
 5. Class implementing a port via real I/O → `providers/<vendor>/` or `infrastructure/`
+6. Shipped test tooling for a framework (fake, harness, conformance check) → `<framework>/testing/`, reached only via the `./testing` barrel
 
 ### Classes vs functions: the rule that matters
 
