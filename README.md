@@ -1,6 +1,6 @@
 # @a-world-felt/nathan-agent-core
 
-> **Current version: 0.1.0-alpha** (prerelease). The public API is not frozen yet; only the `.` entry point (the contract models) ships. See [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.1.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
 
 A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
@@ -64,15 +64,16 @@ Under NodeNext, your own relative imports also carry the `.js` extension, even f
 
 ## Entry points
 
-Three subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
+Four subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
 | Subpath | Contents | State in `0.1.0-alpha` |
 |---|---|---|
 | `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models) |
+| `./llm` | LLM layer: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry + `resolveProvider`, and the LLM models | **available** |
 | `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
-| `./testing` | test harness (fake provider, simulator, scenarios) | **coming** (PR5) |
+| `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.1.0-alpha`, only `.` resolves to code. `./tools` and `./testing` are declared in the `exports` map (the 3 entry points are a design choice, `ADR-AGENT-0002`) but their frameworks are still skeletons: **do not import them before the PRs that fill them in.**
+> In `0.1.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton — **do not import `./tools` before the PR that fills it in.**
 
 ### What `.` exports today
 
@@ -105,11 +106,86 @@ This import **compiles** and **runs** against `0.1.0-alpha`: it is the PR1 insta
 
 ---
 
+## Using the LLM layer (`./llm`)
+
+The `./llm` subpath ships the LLM layer: the `LLMProvider` port, the `OllamaLLMProvider` adapter, the `PROVIDERS` registry with `resolveProvider`, and the LLM models. It has **no import-time side effect** (no disk, no `.env`): it reads only `process.env`.
+
+### Quick start
+
+```ts
+import { OllamaLLMProvider, type Message } from "@a-world-felt/nathan-agent-core/llm";
+
+const provider = new OllamaLLMProvider({ model: "qwen2.5:0.5b" });
+
+const messages: Message[] = [{ role: "user", content: "Bonjour !" }];
+
+// One-shot completion → { content, toolCalls, usage? }.
+const res = await provider.complete(messages);
+console.log(res.content); // the assistant text
+console.log(res.usage);   // { tokensIn, tokensOut } | undefined
+
+// Streaming → yields { contentDelta, done, usage? }; the terminal chunk carries usage.
+for await (const chunk of provider.stream(messages)) {
+  process.stdout.write(chunk.contentDelta);
+  if (chunk.done) console.log("\n", chunk.usage);
+}
+```
+
+`OllamaLLMProvider`'s constructor takes `{ model, baseURL?, supportsTools?, fetch? }`. `baseURL` defaults to `process.env.OLLAMA_HOST ?? "http://localhost:11434"`; `fetch` is injectable (the real global `fetch` in prod, a fake in tests). `complete(messages, tools?)` and `stream(messages, tools?)` optionally take a list of `ToolDefinition`s to present to the model.
+
+### The provider registry
+
+For **env-driven** selection, the registry maps a typed provider id to a factory (a string key must be typed — no untyped lookup):
+
+```ts
+import { PROVIDERS, resolveProvider } from "@a-world-felt/nathan-agent-core/llm";
+
+// Direct, typed access to a known provider:
+const a = PROVIDERS.ollama(); // OllamaLLMProvider built from OLLAMA_MODEL
+
+// From a runtime string (e.g. an env var); throws LLMError("UNKNOWN_PROVIDER") on an unknown id:
+const b = resolveProvider(process.env.LLM_PROVIDER ?? "ollama");
+```
+
+`PROVIDERS.ollama()` builds the provider from `process.env.OLLAMA_MODEL` (falling back to `qwen2.5:0.5b`). The library reads `process.env`; the consuming application loads its `.env`.
+
+### Verifying a provider
+
+Bringing your own provider? `./testing` ships a **runner-agnostic** conformance check: it runs the port's happy path and returns a report. It never throws on a failed check and never couples to a test runner — you assert on the result with whatever you use.
+
+```ts
+import { checkProviderContract } from "@a-world-felt/nathan-agent-core/testing";
+
+const report = await checkProviderContract(provider);
+if (!report.ok) console.error(report.checks.filter((c) => !c.ok));
+```
+
+---
+
+## Setting up Ollama
+
+`OllamaLLMProvider` talks to a local [Ollama](https://ollama.com) server over HTTP.
+
+1. Install Ollama (see the official site).
+2. Pull a model: `ollama pull qwen2.5:0.5b` (small, tool-capable — the default).
+3. Ollama serves on `http://localhost:11434` by default.
+
+Two environment variables configure the Ollama path:
+
+| Variable | Default | Read by |
+|---|---|---|
+| `OLLAMA_HOST` | `http://localhost:11434` | `OllamaLLMProvider`'s `baseURL` when the constructor passes none |
+| `OLLAMA_MODEL` | `qwen2.5:0.5b` | `PROVIDERS.ollama()` / `resolveProvider("ollama")` |
+
+The library reads `process.env`; the consuming application loads its `.env` (e.g. via `dotenv` in its entry point). Nothing is read from disk on import.
+
+---
+
 ## Configuration
 
 **A library does not read a config file.** It reads `process.env`; it is the **consuming application** that loads its `.env` (e.g. via `dotenv` in its entry point). This package never loads a `.env` on import: doing so would inject variables into the consumer's `process.env`, which is not a library's role.
 
-API keys and provider URLs therefore go **through the consumer's environment**, never hardcoded, never committed. The concrete variables (Ollama endpoint, etc.) arrive with the LLM port in PR2.
+API keys and provider URLs therefore go **through the consumer's environment**, never hardcoded, never committed. The variables the LLM layer reads today are **`OLLAMA_HOST`** (default `http://localhost:11434`) and **`OLLAMA_MODEL`** (default `qwen2.5:0.5b`) — see [Setting up Ollama](#setting-up-ollama).
 
 ---
 
