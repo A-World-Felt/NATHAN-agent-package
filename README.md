@@ -75,12 +75,14 @@ Four subpaths, **opt-in**: an agent receives only what you pass it, nothing impl
 
 > In `0.1.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton — **do not import `./tools` before the PR that fills it in.**
 
-### What `.` exports today
+### What `.` exports
 
-The **contract models**: pure types, no runtime dependency, that *are* the contract the implementations will honor:
+`.` re-exports the full `./llm` engine barrel plus `ToolResult` — the umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives the same surface standalone). It exposes:
 
-- **LLM**: `Role`, `Message`, `ToolCall`, `ToolResult`, `Usage`, `LLMResponse`, `LLMErrorCode`, and the `LLMError` class.
-- **Tools**: `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
+- **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
+- **Engine**: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry and `resolveProvider`, and the `LLMError` class.
+
+No disk access reaches `.` — it stays importable everywhere (`ADR-AGENT-0002`).
 
 ### Minimal example
 
@@ -102,7 +104,7 @@ const err = new LLMError("UNKNOWN_PROVIDER", "provider inconnu");
 console.log(salut.role, navigate.required, err.code);
 ```
 
-This import **compiles** and **runs** against `0.1.0-alpha`: it is the PR1 install verification.
+This import **compiles** and **runs**: `.` exposes both the contract types and the engine.
 
 ---
 
