@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PROVIDERS, resolveProvider } from "../../../dist/llm/index.js";
 
-test("PROVIDERS.ollama builds an ILLMProvider", () => {
+test("PROVIDERS.ollama builds an LLMProvider", () => {
   const p = PROVIDERS.ollama();
   assert.equal(typeof p.complete, "function");
   assert.equal(p.supportsStreaming(), true);
