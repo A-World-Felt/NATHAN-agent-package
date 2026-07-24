@@ -1,9 +1,9 @@
 import { LLMError } from "../models/index.js";
-import { OllamaLLMProvider } from "./ollama/ollama-adapter.js";
+import { OllamaLLMProvider } from "./ollama/ollama-llm-provider.js";
 import type { ILLMProvider } from "../interfaces/index.js";
 
-export { OllamaLLMProvider } from "./ollama/ollama-adapter.js";
-export type { OllamaConfig } from "./ollama/ollama-adapter.js";
+export { OllamaLLMProvider } from "./ollama/ollama-llm-provider.js";
+export type { OllamaConfig } from "./ollama/ollama-llm-provider.js";
 
 /** Closed, typed union of provider ids (CLAUDE.md: a string key must be typed). Grows per provider. */
 export type ProviderID = "ollama";
