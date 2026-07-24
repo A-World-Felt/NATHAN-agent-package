@@ -66,16 +66,16 @@ Tools are **opt-in**. An agent receives exactly the tools it is passed, nothing 
 src/
   llm/                          # peer framework, provider-agnostic
     models/index.ts               Message, LLMResponse, ToolCall, ToolResult, LLMError
-    interfaces/ILLMProvider.ts
+    interfaces/llm-provider.ts
     services/response-parser.ts   pure
     providers/
-      ollama/ollama-adapter.ts    OllamaLLMProvider, a CLASS (real I/O)
-      index.ts                    PROVIDERS: Record<ProviderID, () => ILLMProvider>
+      ollama/ollama-llm-provider.ts    OllamaLLMProvider, a CLASS (real I/O)
+      index.ts                    PROVIDERS: Record<ProviderID, () => LLMProvider>
     index.ts
 
   context/                      # peer framework, 2 providers, 1 contract
-    interfaces/IContextProvider.ts
-    interfaces/ITokenCounter.ts
+    interfaces/context-provider.ts
+    interfaces/token-counter.ts
     providers/
       sliding-window/             V1
       memory/                     V3, plugs in here without touching the agent
@@ -84,20 +84,20 @@ src/
 
   tools/
     models/index.ts               ToolCall, ToolResult, ToolSchema
-    interfaces/ITool.ts
+    interfaces/tool.ts
     application/use-cases/dispatch-tool.ts    chains record → [authorize] → execute
     infrastructure/               read-file.ts, write-file.ts, list-files.ts → ./tools branch
     index.ts
 
   metrics/                      # peer framework
     models/index.ts               UsageRecord, MetricsTotal, RateTable
-    interfaces/IMetricsCollector.ts
+    interfaces/metrics-collector.ts
     services/aggregate.ts         pure
     infrastructure/collector.ts
     index.ts
 
   agent/                        # the app
-    models/AgentDefinition.ts
+    models/agent-definition.ts
     services/define-agent.ts      pure
     services/step.ts              pure, one iteration of the loop
     application/
@@ -115,7 +115,7 @@ src/
     index.ts
 ```
 
-`llm/infrastructure/with-metrics.ts`: a decorator that implements `ILLMProvider` and relays to an `IMetricsCollector`. It lives where it wraps.
+`llm/infrastructure/with-metrics.ts`: a decorator that implements `LLMProvider` and relays to a `MetricsCollector`. It lives where it wraps.
 
 `context/` is a **framework in its own right**, not a subfolder of `agent/`: Marcel's rule, "MANY providers serve ONE contract → nested per-vendor". Sliding window and memory are two providers of the same port.
 
@@ -126,7 +126,7 @@ Each framework follows the same pattern:
 ```
 <framework>/
   models/            entities, types, enums: no runtime dependency, no SDK import
-  interfaces/        ports: I*.ts, contracts only
+  interfaces/        ports: kebab-case.ts, contracts only
   services/          PURE functions: NEVER imports interfaces/
   application/
     dtos/            Deps, Input, Result, Options
@@ -138,7 +138,7 @@ Each framework follows the same pattern:
 ### Placement rule (per-file decision tree)
 
 1. Type/interface describing data → `models/`
-2. Interface describing a port (`I<X>`) → `interfaces/`
+2. Interface describing a port → `interfaces/`
 3. Pure function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and orchestrates → `application/use-cases/`
 5. Class implementing a port via real I/O → `providers/<vendor>/` or `infrastructure/`
@@ -173,12 +173,13 @@ feature: string;  // 'generation' | 'replace' | 'chat' | 'coverage-check' | etc.
 
 The real union lives in the comment. Result: the list drifted within a few months, `coverage-check` does not exist in production as a `feature`.
 
-> **If a key is a string, it must be typed.** Correct form: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`: a closed, typed union, driven by an environment variable.
+> **If a key is a string, it must be typed.** Correct form: `PROVIDERS: Record<ProviderID, () => LLMProvider>`: a closed, typed union, driven by an environment variable.
 
 ## Code conventions
 
 - TypeScript strict: no `any` without a justifying comment.
-- Files in `kebab-case.ts`; ports in `IPascalCase.ts`.
+- Files in `kebab-case.ts`, named after their main export (`ollama-llm-provider.ts` holds `OllamaLLMProvider`).
+- **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun — `LLMProvider` in `llm-provider.ts` — and implementations carry descriptive names (`OllamaLLMProvider`, `FakeLLMProvider`). The structural type system makes the `I` marker unnecessary.
 - A barrel `index.ts` per layer; consumers import from the barrel, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. Valuable for a package: an export removed by mistake breaks a test, not a consumer.
 - Simple, readable code: no sophisticated generics for a one-off case.
