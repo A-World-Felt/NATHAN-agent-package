@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkProviderContract, FakeLLMProvider } from "../../dist/testing/index.js";
-import type { LLMProvider } from "../../dist/llm/interfaces/index.js";
-import type { LLMResponse } from "../../dist/llm/models/index.js";
+import { checkProviderContract, FakeLLMProvider } from "../../../dist/testing/index.js";
+import type { LLMProvider } from "../../../dist/llm/interfaces/index.js";
+import type { LLMResponse } from "../../../dist/llm/models/index.js";
 
 test("a conformant provider (the fake) yields a fully-ok report", async () => {
   const fake = new FakeLLMProvider({
