@@ -28,8 +28,8 @@ const seen = (v: unknown): string => {
  * Runner-agnostic conformance check for the `LLMProvider` port (ADR-AGENT-0015).
  * Runs the port's happy path and records one {@link ContractCheck} per invariant.
  *
- * It **never throws on a failed check**: a violated invariant — or an exception thrown
- * while checking it — is caught and recorded as `{ ok:false, detail }`. The caller asserts
+ * It **never throws on a failed check**: a violated invariant (or an exception thrown
+ * while checking it) is caught and recorded as `{ ok:false, detail }`. The caller asserts
  * on the returned {@link ContractReport} with whatever test runner it likes, or none.
  *
  * Streaming checks run only when `provider.supportsStreaming()` is true (ADR-AGENT-0013):

@@ -10,13 +10,13 @@
 The package promise is **"bring your own provider"**: `LLMProvider` (ADR-AGENT-0013) is a
 port implemented by the consumer's own adapters, not only by the two we ship
 (`OllamaLLMProvider`, `FakeLLMProvider`). A published port is a contract, and a contract
-without a conformance check is only a hope. TypeScript proves the *shape* — the methods
-exist — but not the *behavior*: that `complete()` actually resolves to a well-formed
+without a conformance check is only a hope. TypeScript proves the *shape* (the methods
+exist) but not the *behavior*: that `complete()` actually resolves to a well-formed
 `LLMResponse`, that a streaming provider's chunks terminate with exactly one `done:true`,
 that `usage`, when present, carries two numbers.
 
-Every consumer who writes an adapter faces the same question — *did I implement the port
-correctly?* — and, left to themselves, each answers it by rewriting the same ad-hoc checks,
+Every consumer who writes an adapter faces the same question: *did I implement the port
+correctly?* Left to themselves, each answers it by rewriting the same ad-hoc checks,
 badly, or not at all. This is the identical reasoning that made us ship the fake provider
 and the simulator (ADR-AGENT-0006): the hard, reusable part belongs in the package, once.
 
@@ -28,12 +28,12 @@ at runtime, inside the loop, far from the cause.
 
 **B: Ship a conformance *test* coupled to a runner.** A `node:test` suite the consumer
 runs. But that imposes `node:test` (or worse, vitest) as a peer dependency on every consumer
-repo — exactly the coupling ADR-AGENT-0006 rejected for the harness. The harness is
+repo, exactly the coupling ADR-AGENT-0006 rejected for the harness. The harness is
 runner-agnostic; the contract check must be too, for the same reason.
 
 **C: Ship a runner-agnostic function that returns a report.** `checkProviderContract(provider)`
 runs the port's happy path, records one `ContractCheck` per invariant, and returns a
-`ContractReport`. The caller asserts on it with whatever runner it likes — or none.
+`ContractReport`. The caller asserts on it with whatever runner it likes, or none.
 
 ## Decision
 
@@ -58,7 +58,7 @@ against a live Ollama.
 instance, so it serves a consumer's own provider that is not in `PROVIDERS`.
 
 **Streaming checks are conditional on the declared capability.** They run only when
-`provider.supportsStreaming()` is true — the fake (which returns `false`) records none, a
+`provider.supportsStreaming()` is true: the fake (which returns `false`) records none, a
 real Ollama exercises them. This mirrors ADR-AGENT-0013's "unsupported unless proven": the
 contract checks exactly what the provider claims to support, no more.
 
@@ -76,7 +76,7 @@ contract checks exactly what the provider claims to support, no more.
 
 - The set of invariants is ours to keep honest: an invariant the port gains later must be
   added here too, or conformance under-checks. That is the cost of shipping the check.
-- A green report is not a proof of correctness for every input — it exercises the happy
+- A green report is not a proof of correctness for every input; it exercises the happy
   path. It catches shape and protocol violations, not semantic ones.
 
 **Relations**
