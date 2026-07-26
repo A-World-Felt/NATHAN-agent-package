@@ -82,17 +82,19 @@ export async function checkProviderContract(
       : { ok: false, detail: `model = ${seen(provider.model)}` },
   );
 
-  await check("supportsTools() returns a boolean", () =>
-    typeof provider.supportsTools() === "boolean"
+  await check("supportsTools() returns a boolean", () => {
+    const supportsTools = provider.supportsTools();
+    return typeof supportsTools === "boolean"
       ? true
-      : { ok: false, detail: `supportsTools() = ${seen(provider.supportsTools())}` },
-  );
+      : { ok: false, detail: `supportsTools() = ${seen(supportsTools)}` };
+  });
 
-  await check("supportsStreaming() returns a boolean", () =>
-    typeof provider.supportsStreaming() === "boolean"
+  await check("supportsStreaming() returns a boolean", () => {
+    const supportsStreaming = provider.supportsStreaming();
+    return typeof supportsStreaming === "boolean"
       ? true
-      : { ok: false, detail: `supportsStreaming() = ${seen(provider.supportsStreaming())}` },
-  );
+      : { ok: false, detail: `supportsStreaming() = ${seen(supportsStreaming)}` };
+  });
 
   // Capture the completion once; the shape checks below read it. If complete() throws
   // (a propagating provider error), this check fails and `response` stays undefined,
