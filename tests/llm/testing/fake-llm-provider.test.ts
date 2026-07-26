@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { FakeLLMProvider } from "../../../dist/testing/index.js";
-// The `./llm` barrel (dist/llm/index.js) is built in Task 3; at Task 2 LLMResponse
-// resolves from its home layer, which the barrel merely re-exports (same type).
+// LLMResponse is imported from its home layer (dist/llm/models); the `./llm` barrel
+// only re-exports it, so importing from the source layer yields the same type.
 import type { LLMResponse } from "../../../dist/llm/models/index.js";
 
 const reply = (content: string): LLMResponse => ({ content, toolCalls: [], usage: undefined });
