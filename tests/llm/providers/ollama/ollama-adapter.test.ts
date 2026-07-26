@@ -77,7 +77,7 @@ test("stream() yields deltas then a terminal chunk with usage", async () => {
 
 const encoder = new TextEncoder();
 // A fetch whose response body streams the given string pieces as separate byte chunks,
-// so a test controls exactly where reads split — including mid-line and no trailing newline.
+// so a test controls exactly where reads split, including mid-line and no trailing newline.
 const chunkedFetch = (pieces: string[]): typeof fetch =>
   (async () =>
     new Response(
@@ -102,4 +102,68 @@ test("stream() reassembles a line split across reads and a final line with no tr
   assert.deepEqual(chunks.map((c) => c.contentDelta), ["Sure", "!", ""]);
   assert.deepEqual(chunks.map((c) => c.done), [false, false, true]);
   assert.deepEqual(chunks[2].usage, { tokensIn: 36, tokensOut: 26 });
+});
+
+// A fetch whose response body streams the given raw byte chunks verbatim,
+// so a test can split a single multi-byte UTF-8 character across two reads.
+const rawByteFetch = (chunks: Uint8Array[]): typeof fetch =>
+  (async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(chunk);
+          controller.close();
+        },
+      }),
+      { status: 200 },
+    )) as unknown as typeof fetch;
+
+test("stream() reassembles a multi-byte UTF-8 character split across raw reads", async () => {
+  const line = '{"message":{"role":"assistant","content":"café"},"done":true,"prompt_eval_count":1,"eval_count":1}\n';
+  const bytes = encoder.encode(line);
+  // "é" is two UTF-8 bytes (0xC3 0xA9), unique in this ASCII line; split between them so
+  // each raw read carries half the character and the decoder must reassemble across reads.
+  const splitAt = bytes.indexOf(0xc3) + 1;
+  const p = new OllamaLLMProvider({
+    model: "qwen2.5:0.5b",
+    fetch: rawByteFetch([bytes.slice(0, splitAt), bytes.slice(splitAt)]),
+  });
+  const chunks = [];
+  for await (const c of p.stream!([{ role: "user", content: "hi" }])) chunks.push(c);
+  assert.deepEqual(chunks.map((c) => c.contentDelta), ["café"]);
+  assert.deepEqual(chunks.map((c) => c.done), [true]);
+});
+
+test("complete() throws LLMError API_ERROR on a malformed JSON body", async () => {
+  const malformed = (async () => new Response("not json", { status: 200 })) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: malformed });
+  await assert.rejects(() => p.complete([{ role: "user", content: "hi" }]), (e: unknown) => {
+    assert.equal((e as { name: string }).name, "LLMError");
+    assert.equal((e as { code: string }).code, "API_ERROR");
+    return true;
+  });
+});
+
+test("stream() throws LLMError API_ERROR on a malformed NDJSON line", async () => {
+  const malformed = (async () => new Response("not json\n", { status: 200 })) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: malformed });
+  await assert.rejects(async () => {
+    const chunks = [];
+    for await (const c of p.stream!([{ role: "user", content: "hi" }])) chunks.push(c);
+  }, (e: unknown) => {
+    assert.equal((e as { name: string }).name, "LLMError");
+    assert.equal((e as { code: string }).code, "API_ERROR");
+    return true;
+  });
+});
+
+test("role:'tool' message forwards only role and content, dropping toolCallId", async () => {
+  let sentMessages: unknown;
+  const capturingFetch = (async (_url: string, init: { body: string }) => {
+    sentMessages = (JSON.parse(init.body) as { messages: unknown }).messages;
+    return new Response(JSON.stringify(COMPLETE_BODY), { status: 200 });
+  }) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: capturingFetch });
+  await p.complete([{ role: "tool", content: "result", toolCallId: "call_1" }]);
+  assert.deepEqual(sentMessages, [{ role: "tool", content: "result" }]);
 });
