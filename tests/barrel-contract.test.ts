@@ -20,3 +20,11 @@ test("`./testing` exposes the fake and the provider contract check", () => {
   assert.equal(typeof testing.FakeLLMProvider, "function");
   assert.equal(typeof testing.checkProviderContract, "function");
 });
+
+test("`.` and `./llm` do not leak the testing surface", () => {
+  for (const barrel of [root, llm]) {
+    const surface = barrel as Record<string, unknown>;
+    assert.equal(surface.FakeLLMProvider, undefined);
+    assert.equal(surface.checkProviderContract, undefined);
+  }
+});
