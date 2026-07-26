@@ -9,7 +9,7 @@ import type {
   Usage,
 } from "../../models/index.js";
 
-/** The injectable fetch contract: the real global fetch in prod, a fake in tests — the seam that keeps the adapter testable offline. */
+/** The injectable fetch contract: the real global fetch in prod, a fake in tests, the seam that keeps the adapter testable offline. */
 type FetchLike = typeof fetch;
 
 export type OllamaConfig = {
@@ -63,7 +63,12 @@ export class OllamaLLMProvider implements LLMProvider {
 
   async complete(messages: Message[], tools?: ToolDefinition[]): Promise<LLMResponse> {
     const res = await this.post(messages, tools, false);
-    const body = (await res.json()) as OllamaChatChunk;
+    let body: OllamaChatChunk;
+    try {
+      body = (await res.json()) as OllamaChatChunk;
+    } catch (cause) {
+      throw new LLMError("API_ERROR", `Ollama returned a malformed JSON body: ${String(cause)}`, { cause });
+    }
     return {
       content: body.message.content,
       toolCalls: toToolCalls(body.message.tool_calls),
@@ -77,7 +82,12 @@ export class OllamaLLMProvider implements LLMProvider {
       throw new LLMError("API_ERROR", "Ollama streaming response has no body");
     }
     for await (const line of readNdjson(res.body)) {
-      const chunk = JSON.parse(line) as OllamaChatChunk;
+      let chunk: OllamaChatChunk;
+      try {
+        chunk = JSON.parse(line) as OllamaChatChunk;
+      } catch (cause) {
+        throw new LLMError("API_ERROR", `Ollama returned a malformed NDJSON line: ${String(cause)}`, { cause });
+      }
       yield {
         contentDelta: chunk.message?.content ?? "",
         done: chunk.done,
@@ -115,6 +125,8 @@ function toRequestMessage(m: Message): OllamaRequestMessage {
   if (m.role === "assistant" && m.toolCalls?.length) {
     out.tool_calls = m.toolCalls.map((tc) => ({ function: { name: tc.name, arguments: tc.arguments } }));
   }
+  // A `role:"tool"` message forwards only role and content; its toolCallId is not sent on the wire.
+  // Revisit against the endpoint if call/result correlation ever becomes necessary.
   return out;
 }
 
@@ -153,6 +165,8 @@ async function* readNdjson(body: ReadableStream<Uint8Array>): AsyncIterable<stri
       if (line) yield line;
     }
   }
+  // Flush any multi-byte sequence the decoder is still holding after the last read.
+  buffer += decoder.decode();
   const last = buffer.trim();
   if (last) yield last;
 }
