@@ -15,6 +15,16 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 const isUsage = (u: unknown): boolean =>
   isRecord(u) && typeof u.tokensIn === "number" && typeof u.tokensOut === "number";
 
+/** A stream chunk's required shape: a text delta and a terminal flag. */
+const isStreamChunk = (c: unknown): boolean =>
+  isRecord(c) && typeof c.contentDelta === "string" && typeof c.done === "boolean";
+
+/** A chunk that fails the required shape; what findIndex looks for when validating a stream. */
+const isMalformedChunk = (c: unknown): boolean => !isStreamChunk(c);
+
+/** True when a stream chunk carries the terminal flag `done:true`. */
+const isDoneChunk = (c: unknown): boolean => isRecord(c) && c.done === true;
+
 /** Best-effort rendering of a value for a failure detail; never throws. */
 const seen = (v: unknown): string => {
   try {
@@ -22,6 +32,18 @@ const seen = (v: unknown): string => {
   } catch {
     return String(v);
   }
+};
+
+/** The message of a thrown value, whatever its type; never throws. */
+const errorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
+
+/** Normalize a check body's result (a bare boolean, or `{ ok, detail }`) into a ContractCheck. */
+const toContractCheck = (name: string, result: CheckResult): ContractCheck => {
+  if (typeof result === "boolean") return { name, ok: result };
+  // Omit `detail` when absent rather than set it to undefined: a passing check stays {name, ok}.
+  if (result.detail === undefined) return { name, ok: result.ok };
+  return { name, ok: result.ok, detail: result.detail };
 };
 
 /**
@@ -42,15 +64,15 @@ export async function checkProviderContract(
   const prompt = opts?.prompt ?? "ping";
   const checks: ContractCheck[] = [];
 
-  // Run one check in isolation: a thrown error becomes a recorded failure, not a crash.
-  const check = async (name: string, fn: () => CheckResult | Promise<CheckResult>): Promise<void> => {
+  // Run one invariant and record its outcome. `body` is a function on purpose: deferring it lets us
+  // wrap it in try/catch, so if the invariant throws (any call into the untrusted provider might),
+  // that becomes a recorded failure instead of crashing the whole check.
+  const check = async (name: string, body: () => CheckResult | Promise<CheckResult>): Promise<void> => {
     try {
-      const r = await fn();
-      const ok = typeof r === "boolean" ? r : r.ok;
-      const detail = typeof r === "boolean" ? undefined : r.detail;
-      checks.push(detail === undefined ? { name, ok } : { name, ok, detail });
+      const result = await body();
+      checks.push(toContractCheck(name, result));
     } catch (err) {
-      checks.push({ name, ok: false, detail: err instanceof Error ? err.message : String(err) });
+      checks.push({ name, ok: false, detail: errorMessage(err) });
     }
   };
 
@@ -124,14 +146,14 @@ export async function checkProviderContract(
       });
 
       await check("each chunk has contentDelta:string and done:boolean", () => {
-        const bad = chunks.findIndex(
-          (c) => !(isRecord(c) && typeof c.contentDelta === "string" && typeof c.done === "boolean"),
-        );
-        return bad === -1 ? true : { ok: false, detail: `chunk #${bad} = ${seen(chunks[bad])}` };
+        const badIndex = chunks.findIndex(isMalformedChunk);
+        return badIndex === -1
+          ? true
+          : { ok: false, detail: `chunk #${badIndex} = ${seen(chunks[badIndex])}` };
       });
 
       await check("exactly the last chunk has done:true", () => {
-        const dones = chunks.map((c) => isRecord(c) && c.done === true);
+        const dones = chunks.map(isDoneChunk);
         const count = dones.filter(Boolean).length;
         const lastIsDone = dones.length > 0 && dones[dones.length - 1] === true;
         return count === 1 && lastIsDone
