@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SlidingWindowContext, HeuristicTokenCounter } from "../../../../dist/context/index.js";
+import { SlidingWindowStrategy, HeuristicTokenCounter } from "../../../../dist/context/index.js";
 import type { TokenCounter } from "../../../../dist/context/index.js";
 import type { Message } from "../../../../dist/llm/index.js";
 
@@ -20,8 +20,8 @@ const ANSWER: Message = { role: "assistant", content: "tu es dans les reglages" 
 const USER_2: Message = { role: "user", content: "mets le theme sombre" };
 
 /** Build a strategy whose budget is expressed in messages, via the stub counter. */
-function windowOf(maxTokens: number): SlidingWindowContext {
-  return new SlidingWindowContext({ maxTokens, counter: oneTokenPerMessage });
+function windowOf(maxTokens: number): SlidingWindowStrategy {
+  return new SlidingWindowStrategy({ maxTokens, counter: oneTokenPerMessage });
 }
 
 /** No `tool` message may appear without the `assistant` call it answers, earlier in the list. */
@@ -37,7 +37,7 @@ function hasOrphanToolMessage(messages: Message[]): boolean {
 }
 
 test("maxTokens is exposed as given", () => {
-  const context = new SlidingWindowContext({ maxTokens: 512, counter: new HeuristicTokenCounter() });
+  const context = new SlidingWindowStrategy({ maxTokens: 512, counter: new HeuristicTokenCounter() });
   assert.equal(context.maxTokens, 512);
 });
 
