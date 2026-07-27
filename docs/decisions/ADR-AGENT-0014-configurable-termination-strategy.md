@@ -79,7 +79,7 @@ The **exact API surface** (a standalone field on `AgentDefinition`, versus foldi
 
 - **The prompt-fragment injection mechanism.** `explicit` is the **first** instance of an "opt-in capability" = `{prompt fragment + tool(s) + implementation}`. Agentic memory (memory-as-tools) would be a **second** instance of the same shape. We deliberately do **not** build a generic "capability" framework now (that is the overhead the permanent constraint forbids) and will extract the pattern only when the second instance actually lands (rule of three). Until then, `explicit` is wired minimally.
 - **Who owns the `finish` prompt fragment** (engine-owned canonical fragment vs. agent author): decided when the mechanism above is built.
-- **The context/memory boundary** (memory as a transparent `IContextProvider` vs. an agent-facing `IMemory` port surfaced as tools) is a **separate, larger decision at the V3 horizon** and gets its own ADR. It is deliberately *not* coupled to this one, so a mature decision (termination) is not blocked on an immature one (memory).
+- **The context/memory boundary** (memory as a transparent `ContextStrategy` vs. an agent-facing `IMemory` port surfaced as tools) is a **separate, larger decision at the V3 horizon** and gets its own ADR. It is deliberately *not* coupled to this one, so a mature decision (termination) is not blocked on an immature one (memory).
 
 **What does not change**
 

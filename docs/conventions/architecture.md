@@ -14,7 +14,7 @@ The **4 bands** of the team diagram are exactly this separation:
 | Band | Correspondence in `src/` |
 |---|---|
 | Application | `agent/` |
-| Interface | all the `interfaces/` (`I*.ts`) |
+| Interface | all the `interfaces/` (one `kebab-case.ts` per port, no `I` prefix) |
 | Local Implementation | the shipped `providers/` and `infrastructure/` |
 | External Implementation | written by the **consumer repo**, not here |
 
@@ -35,7 +35,7 @@ Each framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) follows 
 ```
 <framework>/
   models/            entities, types, enums: no runtime dependency, no SDK import
-  interfaces/        ports I*.ts (contracts only)
+  interfaces/        ports: kebab-case.ts (contracts only)
   services/          PURE functions, NEVER import interfaces/
   application/
     dtos/            Deps, Input, Result, Options
@@ -47,15 +47,17 @@ Each framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) follows 
 
 `providers/` or `strategies/`? Look at what varies between two implementations. If it is the **supplier**, it is `providers/<vendor>/`: `llm/providers/ollama/`. If it is the **algorithm**, it is `strategies/<name>/`: `context/strategies/sliding-window/`. A strategy that later talks to an external service keeps that service behind its own port, adapted in `infrastructure/` or `providers/<vendor>/`, so the two axes never mix (`ADR-AGENT-0016`).
 
-`context/` is a **full-fledged framework**, not a subfolder of `agent/`: sliding window and memory are two strategies of one same context port.
+**The port carries the same word as the folder**: `LLMProvider` in `llm/` because the implementations differ by supplier, `ContextStrategy` in `context/` because they differ by algorithm. Two different words for the same rule read on two different axes, not an inconsistency.
+
+`context/` is a **full-fledged framework**, not a subfolder of `agent/`: sliding window and memory are two strategies of the same `ContextStrategy` port.
 
 ## Placement rule (per-file decision tree)
 
 1. Type/interface describing **data** → `models/`
-2. Interface describing a **port** (`I<X>`) → `interfaces/`
+2. Interface describing a **port** → `interfaces/`, as a plain noun with no `I` prefix
 3. **Pure** function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and **orchestrates** → `application/use-cases/`
-5. Class implementing a port → `providers/<vendor>/` (differ by **supplier**), `strategies/<name>/` (differ by **algorithm**), or `infrastructure/` for the other concrete adapters with **real I/O**
+5. Class implementing a port → `providers/<vendor>/` (differ by **supplier**, port named `…Provider`), `strategies/<name>/` (differ by **algorithm**, port named `…Strategy`), or `infrastructure/` for the other concrete adapters with **real I/O**
 
 Invariants that a review treats as real problems:
 
@@ -68,7 +70,7 @@ Invariants that a review treats as real problems:
 | Nature | Form | Examples |
 |---|---|---|
 | **Public API** with state and several operations | **class** | `AgenticLLM`, `VoiceAgenticLLM` |
-| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowContext`, the tools |
+| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowStrategy`, the tools |
 | Pure orchestration or computation function | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
 
 The public API is a **class** (it offers the `agent.` autocompletion that a factory does not expose, `ADR-AGENT-0009`); its mechanics are a **pure function** testable without instantiating the class. `AgenticLLM.run()` wraps `step(state, deps)`.
@@ -77,4 +79,4 @@ The public API is a **class** (it offers the `agent.` autocompletion that a fact
 
 `defineAgent()` is a pure function that returns a typed object. Agents are exported `const`s, imported **statically**. No lookup by name, no untyped `string` key.
 
-> **If a key is a string, it must be typed.** The failure mode to avoid (observed in production elsewhere): a real union that lives only in a comment (`feature: string; // 'a' | 'b' | …`) drifts within a few months. Correct form: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed, typed union. See `ADR-AGENT-0005`.
+> **If a key is a string, it must be typed.** The failure mode to avoid (observed in production elsewhere): a real union that lives only in a comment (`feature: string; // 'a' | 'b' | …`) drifts within a few months. Correct form: `PROVIDERS: Record<ProviderID, () => LLMProvider>`, closed, typed union. See `ADR-AGENT-0005`.

@@ -68,4 +68,4 @@ export type AgentResult = {
 
 **To watch**
 
-A model that does not support native tool calls would signal its end differently. `ILLMProvider.supportsTools()` exists to detect this case; the associated handling is not in V1.
+A model that does not support native tool calls would signal its end differently. `LLMProvider.supportsTools()` exists to detect this case; the associated handling is not in V1.

@@ -26,9 +26,9 @@ The metrics decorator therefore needs no tokenizer at all.
 
 **A: Each caller reads `response.usage` and aggregates on its own.** No infrastructure, but the aggregation gets rewritten everywhere and nothing propagates across nested calls.
 
-**B: Decorator over `ILLMProvider`, scoped by `start`/`stop`.** The initial proposal.
+**B: Decorator over `LLMProvider`, scoped by `start`/`stop`.** The initial proposal.
 
-**C: Decorator over `ILLMProvider`, scoped by the collector's instance.** Same relay mechanism, but the object's lifetime *is* the scope.
+**C: Decorator over `LLMProvider`, scoped by the collector's instance.** Same relay mechanism, but the object's lifetime *is* the scope.
 
 ## Decision
 
@@ -36,14 +36,14 @@ The metrics decorator therefore needs no tokenizer at all.
 
 ```ts
 const metrics  = createMetricsCollector();
-const provider = withMetrics(ollama, metrics);   // implements ILLMProvider
+const provider = withMetrics(ollama, metrics);   // implements LLMProvider
 
 const r = await runAgent(...);
 
 metrics.total();   // { calls, tokensIn, tokensOut, durationMs }
 ```
 
-`withMetrics` implements `ILLMProvider` and delegates. Neither the agent nor the provider knows it is there.
+`withMetrics` implements `LLMProvider` and delegates. Neither the agent nor the provider knows it is there.
 
 ### Why not `start` / `stop`
 
@@ -71,7 +71,7 @@ metrics.total({
 
 The consumer loads its config however it likes and passes the object; **the package reads no file**: otherwise the `.` entry point would drag `fs` behind it (`ADR-AGENT-0002`). The package does the arithmetic and the aggregation.
 
-The join key is `ILLMProvider.model`, already present in the original diagram.
+The join key is `LLMProvider.model`, already present in the original diagram.
 
 ### Three rules
 
@@ -84,7 +84,7 @@ The join key is `ILLMProvider.model`, already present in the original diagram.
 **Positive**
 
 - No coupling: the agent is unaware of the decorator, and so is the provider.
-- `withMetrics` wraps **any** `ILLMProvider`, including the fake one: the metrics machinery can be tested deterministically, with no network.
+- `withMetrics` wraps **any** `LLMProvider`, including the fake one: the metrics machinery can be tested deterministically, with no network.
 - Same pattern as the `record → authorize → execute` chain on the tools side (`ADR-AGENT-0004`): a single concept on both seams of the system.
 - The package does not expire when rates change.
 

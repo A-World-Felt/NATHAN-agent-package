@@ -7,7 +7,7 @@
 
 ## Context
 
-`IContextProvider` exposes `maxTokens`. The sliding window must therefore decide what fits, and to do that, it must know what a history weighs.
+`ContextStrategy` exposes `maxTokens`. The sliding window must therefore decide what fits, and to do that, it must know what a history weighs.
 
 Initial position, adopted then revised: "count messages, not tokens, to avoid a dependency on a tokenizer". The team's objection is fair:
 
@@ -30,16 +30,16 @@ But an exact tokenizer is **model-specific**: `tiktoken` for OpenAI, sentencepie
 **Option C.**
 
 ```ts
-// context/interfaces/ITokenCounter.ts
-export interface ITokenCounter {
+// context/interfaces/token-counter.ts
+export interface TokenCounter {
   count(messages: Message[]): number;
 }
 ```
 
 - **V1**: `HeuristicTokenCounter`: characters ÷ 4, documented as approximate.
-- **Later**: an implementation per model family, plugging in without touching `SlidingWindowContext`.
+- **Later**: an implementation per model family, plugging in without touching `SlidingWindowStrategy`.
 
-This is the same logic as for `ILLMProvider` and `IContextProvider`: whatever varies by provider goes behind a port.
+This is the same logic as for `LLMProvider` and `ContextStrategy`: whatever varies by provider goes behind a port.
 
 ### Free calibration
 

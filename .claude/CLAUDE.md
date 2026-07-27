@@ -79,10 +79,10 @@ src/
     index.ts
 
   context/                      # peer framework, 2 strategies, 1 contract
-    interfaces/context-provider.ts
+    interfaces/context-strategy.ts
     interfaces/token-counter.ts
     strategies/                   they differ by algorithm, not by vendor
-      sliding-window/             V1: SlidingWindowContext and its pure helpers
+      sliding-window/             V1: SlidingWindowStrategy and its pure helpers
       memory/                     V3, plugs in here without touching the agent
     infrastructure/heuristic-token-counter.ts
     index.ts
@@ -123,7 +123,7 @@ src/
 
 `llm/infrastructure/with-metrics.ts`: a decorator that implements `LLMProvider` and relays to a `MetricsCollector`. It lives where it wraps.
 
-`context/` is a **framework in its own right**, not a subfolder of `agent/`: many implementations serve one contract, so they are nested one folder each. Sliding window and memory are two **strategies** of the same port, not two vendors, hence `strategies/` and not `providers/` (`ADR-AGENT-0016`).
+`context/` is a **framework in its own right**, not a subfolder of `agent/`: many implementations serve one contract, so they are nested one folder each. Sliding window and memory are two **strategies** of the same port, not two vendors, hence `strategies/` and not `providers/`, and hence the port is `ContextStrategy` and not `ContextProvider` (`ADR-AGENT-0016`).
 
 `testing/` is **not** a top-level framework. Shipped test tooling co-locates under each framework's own `testing/` subfolder (`llm/testing/`, later `agent/testing/`) because it is that framework's functionality, not a cross-cutting concern. The top-level `testing/index.ts` only **aggregates** them behind the one `./testing` subpath. A framework's production barrel never exports its `testing/`, so the tooling reaches consumers through `./testing` only, never through `.` or `./llm`.
 
@@ -151,7 +151,7 @@ Each framework follows the same pattern:
 2. Interface describing a port → `interfaces/`
 3. Pure function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and orchestrates → `application/use-cases/`
-5. Class implementing a port → `providers/<vendor>/` when the implementations differ by **supplier** (`llm/providers/ollama/`), `strategies/<name>/` when they differ by **algorithm** (`context/strategies/sliding-window/`), `infrastructure/` for the remaining concrete adapters with real I/O (`ADR-AGENT-0016`)
+5. Class implementing a port → `providers/<vendor>/` when the implementations differ by **supplier** (`llm/providers/ollama/`), `strategies/<name>/` when they differ by **algorithm** (`context/strategies/sliding-window/`), `infrastructure/` for the remaining concrete adapters with real I/O (`ADR-AGENT-0016`). **The port carries the same word as the folder**: `LLMProvider` for `llm/`, `ContextStrategy` for `context/`.
 6. Shipped test tooling for a framework (fake, harness, conformance check) → `<framework>/testing/`, reached only via the `./testing` barrel
 
 ### Classes vs functions: the rule that matters
@@ -159,7 +159,7 @@ Each framework follows the same pattern:
 | Nature | Form | Examples |
 |---|---|---|
 | **Public API** with state and several operations | **class** | `AgenticLLM`, `VoiceAgenticLLM` |
-| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowContext`, the tools |
+| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowStrategy`, the tools |
 | Pure function for orchestration or computation | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
 
 ```ts

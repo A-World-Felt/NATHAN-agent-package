@@ -14,7 +14,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 
 | # | Decision | Status | Date |
 |---|---|---|---|
-| [ADR-AGENT-0001](ADR-AGENT-0001-hexagonal-architecture-use-cases-functions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 and 0012 | 2026-07-21 |
+| [ADR-AGENT-0001](ADR-AGENT-0001-hexagonal-architecture-use-cases-functions.md) | Hexagonal architecture | ✅ Accepted, complemented by 0009 and 0012, placement rule 5 refined by 0016 | 2026-07-21 |
 | [ADR-AGENT-0002](ADR-AGENT-0002-three-entry-points-opt-in-tools.md) | Three entry points, opt-in tools | ✅ Accepted, complemented by 0012 | 2026-07-21 |
 | [ADR-AGENT-0003](ADR-AGENT-0003-loop-termination-state-machine.md) | Termination by absence of tool call, suspendable state machine | ✅ Accepted | 2026-07-21 |
 | [ADR-AGENT-0004](ADR-AGENT-0004-isolation-execution-policy.md) | Isolation: policy and execution, two composable axes | ✅ Accepted | 2026-07-21 |
@@ -28,6 +28,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | [ADR-AGENT-0012](ADR-AGENT-0012-framework-independence-core-kernel-subpaths.md) | Framework independence: neutral `core` kernel, per-framework subpaths | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0013](ADR-AGENT-0013-llm-port-capabilities-optional-streaming.md) | The LLM port: required capabilities, optional streaming | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0014](ADR-AGENT-0014-configurable-termination-strategy.md) | Termination strategy as a configurable, empirically-decided axis | ✅ Accepted, complements 0003 and 0011 | 2026-07-22 |
+| [ADR-AGENT-0015](ADR-AGENT-0015-shipped-provider-contract-test.md) | The package ships a provider contract test | ✅ Accepted | 2026-07-24 |
 | [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) | Context strategies are implementations of one port | ✅ Accepted | 2026-07-27 |
 
 ## Upcoming decisions
@@ -35,8 +36,8 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | Topic | When |
 |---|---|
 | V2 provider (tool-call quality / cost per token / latency) | before the 2nd provider's PR |
-| Real `ITokenCounter` implementation (model family) | when the heuristic shows its limits |
-| Memory boundary: transparent `ContextProvider` vs agentic memory tools | V3. Constraints it must respect: [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) (the three-member port, composition behind it, the store's own subpath). Framing: docs/theory/2026-07-22-context-memory-and-termination-separation.md |
+| Real `TokenCounter` implementation (model family) | when the heuristic shows its limits |
+| Memory boundary: transparent `ContextStrategy` vs agentic memory tools | V3. Constraints it must respect: [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) (the three-member port, composition behind it, the store's own subpath). Framing: docs/theory/2026-07-22-context-memory-and-termination-separation.md |
 | Execution in a container | not before a consumer exposes a shell |
 | User approval before writing | when the IDE repo needs it |
 
