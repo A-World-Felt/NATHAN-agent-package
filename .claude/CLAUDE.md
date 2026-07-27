@@ -78,11 +78,11 @@ src/
       index.ts
     index.ts
 
-  context/                      # peer framework, 2 providers, 1 contract
+  context/                      # peer framework, 2 strategies, 1 contract
     interfaces/context-provider.ts
     interfaces/token-counter.ts
-    providers/
-      sliding-window/             V1
+    strategies/                   they differ by algorithm, not by vendor
+      sliding-window/             V1: SlidingWindowContext and its pure helpers
       memory/                     V3, plugs in here without touching the agent
     infrastructure/heuristic-token-counter.ts
     index.ts
@@ -123,7 +123,7 @@ src/
 
 `llm/infrastructure/with-metrics.ts`: a decorator that implements `LLMProvider` and relays to a `MetricsCollector`. It lives where it wraps.
 
-`context/` is a **framework in its own right**, not a subfolder of `agent/`: Marcel's rule, "MANY providers serve ONE contract → nested per-vendor". Sliding window and memory are two providers of the same port.
+`context/` is a **framework in its own right**, not a subfolder of `agent/`: many implementations serve one contract, so they are nested one folder each. Sliding window and memory are two **strategies** of the same port, not two vendors, hence `strategies/` and not `providers/` (`ADR-AGENT-0016`).
 
 `testing/` is **not** a top-level framework. Shipped test tooling co-locates under each framework's own `testing/` subfolder (`llm/testing/`, later `agent/testing/`) because it is that framework's functionality, not a cross-cutting concern. The top-level `testing/index.ts` only **aggregates** them behind the one `./testing` subpath. A framework's production barrel never exports its `testing/`, so the tooling reaches consumers through `./testing` only, never through `.` or `./llm`.
 
@@ -139,7 +139,8 @@ Each framework follows the same pattern:
   application/
     dtos/            Deps, Input, Result, Options
     use-cases/       orchestration ONLY
-  providers/<vendor>/  concrete adapters per provider
+  providers/<vendor>/  concrete adapters per supplier
+  strategies/<name>/   concrete implementations that differ by algorithm
   infrastructure/    other concrete adapters (real I/O)
   testing/           shipped test tooling for this framework (→ ./testing, never the prod barrel)
 ```
@@ -150,7 +151,7 @@ Each framework follows the same pattern:
 2. Interface describing a port → `interfaces/`
 3. Pure function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and orchestrates → `application/use-cases/`
-5. Class implementing a port via real I/O → `providers/<vendor>/` or `infrastructure/`
+5. Class implementing a port → `providers/<vendor>/` when the implementations differ by **supplier** (`llm/providers/ollama/`), `strategies/<name>/` when they differ by **algorithm** (`context/strategies/sliding-window/`), `infrastructure/` for the remaining concrete adapters with real I/O (`ADR-AGENT-0016`)
 6. Shipped test tooling for a framework (fake, harness, conformance check) → `<framework>/testing/`, reached only via the `./testing` barrel
 
 ### Classes vs functions: the rule that matters
