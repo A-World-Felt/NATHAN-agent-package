@@ -157,6 +157,20 @@ test("stream() throws LLMError API_ERROR on a malformed NDJSON line", async () =
   });
 });
 
+test("stream() throws LLMError API_ERROR on a chunk without a done boolean", async () => {
+  const noDone = (async () =>
+    new Response('{"message":{"role":"assistant","content":"hi"}}\n', { status: 200 })) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ model: "qwen2.5:0.5b", fetch: noDone });
+  await assert.rejects(async () => {
+    const chunks = [];
+    for await (const c of p.stream!([{ role: "user", content: "hi" }])) chunks.push(c);
+  }, (e: unknown) => {
+    assert.equal((e as { name: string }).name, "LLMError");
+    assert.equal((e as { code: string }).code, "API_ERROR");
+    return true;
+  });
+});
+
 test("role:'tool' message forwards only role and content, dropping toolCallId", async () => {
   let sentMessages: unknown;
   const capturingFetch = (async (_url: string, init: { body: string }) => {
