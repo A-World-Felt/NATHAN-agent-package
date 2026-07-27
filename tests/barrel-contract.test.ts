@@ -28,3 +28,16 @@ test("`.` and `./llm` do not leak the testing surface", () => {
     assert.equal(surface.checkProviderContract, undefined);
   }
 });
+
+test("`.` exposes the context layer", () => {
+  const surface = root as Record<string, unknown>;
+  for (const name of ["SlidingWindowContext", "HeuristicTokenCounter"]) {
+    assert.equal(typeof surface[name], "function", `missing ${name}`);
+  }
+});
+
+test("`./llm` does not carry the context layer", () => {
+  const surface = llm as Record<string, unknown>;
+  assert.equal(surface.SlidingWindowContext, undefined);
+  assert.equal(surface.HeuristicTokenCounter, undefined);
+});
