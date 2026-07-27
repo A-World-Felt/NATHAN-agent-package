@@ -1,6 +1,6 @@
 ---
 name: judge
-description: Independent two-stage review of ONE built plan task: plan/ADR compliance and structural placement, then sandbox gates and quality. Strict verdict, sandbox output mandatory. Does NOT fix or merge.
+description: "Independent two-stage review of ONE built plan task: plan/ADR compliance and structural placement, then sandbox gates and quality. Strict verdict, sandbox output mandatory. Does NOT fix or merge."
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
