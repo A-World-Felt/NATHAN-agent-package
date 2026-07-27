@@ -1,23 +1,23 @@
 ---
 name: cycle
-description: Plan-driven dev loop for nathan-agent-core. Walks an implementation plan task by task, dispatching a builder then an independent judge per task, retrying on request_changes (max 2), and stopping at a reviewed, committed branch — ready for the human to push and open the PR. Never merges.
+description: Plan-driven dev loop for nathan-agent-core. Walks an implementation plan task by task, dispatching a builder then an independent judge per task, retrying on request_changes (max 2), and stopping at a reviewed, committed branch, ready for the human to push and open the PR. Never merges.
 user-invocable: true
 ---
 
-# Development Cycle — nathan-agent-core
+# Development Cycle: nathan-agent-core
 
-You are the **orchestrator**. You do **NOT** build or review yourself — you spawn a subagent for each phase and route on its verdict. Adapted from Marcel's cycle for this **headless TypeScript library**: no issue-picking, no UI verifiers, no auto-merge. The unit of work is a **Task in an implementation plan** (`docs/plans/…`), not a GitHub issue.
+You are the **orchestrator**. You do **NOT** build or review yourself: you spawn a subagent for each phase and route on its verdict. Adapted from Marcel's cycle for this **headless TypeScript library**: no issue-picking, no UI verifiers, no auto-merge. The unit of work is a **Task in an implementation plan** (`docs/plans/…`), not a GitHub issue.
 
 **Companion:** brainstorming happens in the main thread (superpowers:brainstorming), the plan is written with superpowers:writing-plans. `/cycle` executes an existing plan.
 
 ## Inputs
 
-- **Plan path** — e.g. `docs/plans/2026-07-22-dev-194-llm-port.md`.
-- **JIRA id** — e.g. `DEV-194` (commit trailers).
+- **Plan path**: e.g. `docs/plans/2026-07-22-dev-194-llm-port.md`.
+- **JIRA id**: e.g. `DEV-194` (commit trailers).
 
 If not given, ask for the plan path once, then read it to get the JIRA id from its header.
 
-## Step 0 — Preconditions
+## Step 0: Preconditions
 
 ```bash
 git branch --show-current      # a feature branch: type/JIRAID-name, NOT main/development/release/*
@@ -28,9 +28,9 @@ git status --short             # should be clean (or only the plan file)
 
 Read the plan fully. Extract the ordered list of **Tasks** and, for each, the ADRs it references.
 
-## Step 1 — For each Task, in order
+## Step 1: For each Task, in order
 
-### 1a. Build — dispatch `builder`
+### 1a. Build: dispatch `builder`
 
 ```
 Agent(
@@ -46,7 +46,7 @@ Route on the returned verdict:
 - `status: "committed"`, all gates pass → **1b**.
 - `status: "blocked"` or `"failed"` → **STOP**. Surface the reason to the user; do not improvise a fix.
 
-### 1b. Review — dispatch `judge`
+### 1b. Review: dispatch `judge`
 
 ```
 Agent(
@@ -63,7 +63,7 @@ Route on `verdict`:
 - `rejected` → **STOP**, paste the verdict for the user to decide.
 - Missing/empty sandbox block → the verdict is invalid; **re-dispatch judge** once.
 
-### 1c. Fix — dispatch `builder` (retry, max 2 per Task)
+### 1c. Fix: dispatch `builder` (retry, max 2 per Task)
 
 ```
 Agent(
@@ -77,7 +77,7 @@ Return your verdict JSON."
 
 Then back to **1b** (re-judge). After **2** `request_changes` rounds on the same Task → **STOP**: paste the latest verdict, let the user decide (amend the plan? an ADR conflict? take over manually?).
 
-## Step 2 — Finish (no merge)
+## Step 2: Finish (no merge)
 
 When every Task is `approved`:
 
@@ -86,9 +86,9 @@ npm run typecheck && npm test && npm run build     # one clean full-suite pass
 git log --oneline <base>..HEAD                     # show the task commits
 ```
 
-Delete any stray untracked probe files you created while orchestrating (explicit paths only — never `git clean`, never a tracked or `.env`/`_jira-scratch`/`dist` path).
+Delete any stray untracked probe files you created while orchestrating (explicit paths only: never `git clean`, never a tracked or `.env`/`_jira-scratch`/`dist` path).
 
-Then **STOP and hand off** — do not push, do not open a PR:
+Then **STOP and hand off**, do not push, do not open a PR:
 
 ```
 Plan <plan path> complete: <N> tasks, all judge-approved, full suite green.
@@ -99,11 +99,11 @@ Ready for you to push and open the PR (your teammates review). For the real-Olla
 
 ## Rules
 
-- **Never build or review yourself** — `Agent()` for every phase.
+- **Never build or review yourself**: `Agent()` for every phase.
 - **One Task per builder→judge round.** Per-task review, not per-feature.
 - **Max 2 fix retries per Task**, then stop for the human.
 - **Never merge, never push.** The loop ends at a reviewed, committed branch; the human opens the PR (branch-protection + teammate review is the team's gate).
-- **Judge verdict must include sandbox output** — re-dispatch if missing.
+- **Judge verdict must include sandbox output**: re-dispatch if missing.
 - The builder and judge are **independent**: never pass the builder's reasoning to the judge as justification; the judge reviews the code and the plan, not intent.
 - A plan-vs-ADR conflict (`spec_defect` from the judge) → stop and fix the **plan/ADR** with the user, not the code.
 
