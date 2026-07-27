@@ -1,5 +1,5 @@
 import type { Message } from "../../../llm/models/index.js";
-import type { ContextProvider, TokenCounter } from "../../interfaces/index.js";
+import type { ContextStrategy, TokenCounter } from "../../interfaces/index.js";
 
 export type SlidingWindowConfig = {
   /** Budget for the outbound list. Set it under the model's real window: framing tokens are not counted. */
@@ -27,7 +27,7 @@ type AtomicUnit = Message[];
  * for any history where tool results follow their call as the loop appends them, a call is never
  * separated from its result.
  */
-export class SlidingWindowContext implements ContextProvider {
+export class SlidingWindowStrategy implements ContextStrategy {
   readonly maxTokens: number;
   private readonly counter: TokenCounter;
 
