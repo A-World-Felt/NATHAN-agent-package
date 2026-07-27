@@ -12,7 +12,7 @@ While deciding termination (ADR-AGENT-0014) we worked out a separation of concer
 
 ## The conflation to untangle
 
-Today the `context/` framework hosts **two** providers behind one port, `IContextProvider`: `sliding-window` (V1) and `memory` (V3). But "**stay within the token window**" and "**remember across sessions**" are two different jobs. Putting both behind the same port is the root of the confusion that surfaced during the termination discussion.
+Today the `context/` framework hosts **two** providers behind one port, `ContextStrategy`: `sliding-window` (V1) and `memory` (V3). But "**stay within the token window**" and "**remember across sessions**" are two different jobs. Putting both behind the same port is the root of the confusion that surfaced during the termination discussion.
 
 ## Three concerns
 
@@ -26,7 +26,7 @@ The first is not the agent's job and is never optional. The second is optional a
 
 ## Memory has two faces: non-exclusive
 
-- **Transparent ("brain")**: memory *fills the window*: retrieval → context injected. In this face memory **is** an `IContextProvider`. The agent is unaware it exists.
+- **Transparent ("brain")**: memory *fills the window*: retrieval → context injected. In this face memory **is** an `ContextStrategy`. The agent is unaware it exists.
 - **Agentic**: memory is a **capability the agent drives** via tools (`remember` / `recall` / `search`), black-box, behind an `IMemory` port. The agent decides when to store or recall. Precedent: **MemGPT / Letta**.
 
 These are **not rivals**. A serious system may have **both**: a sliding window to fit the token budget *and* memory tools for long-term recall, possibly over the same backend. The question is not "which one" but "which faces do we want, and where do they live."
@@ -46,15 +46,15 @@ capability = { prompt fragment (teaches the model to use it)
 
 ## What this implies for the current design (pointers, not decisions)
 
-- **`sliding-window` stays a transparent `IContextProvider`**: plumbing, not the agent's job. Not in question.
-- **Memory's home is the open question**: keep it as a transparent `IContextProvider` (retrieval-into-window), OR move it to an `IMemory` port surfaced as tools, OR both. → the V3 memory ADR.
-- **Termination** (ADR-AGENT-0014): `implicit` default, `explicit` opt-in as an evaluation axis. `explicit` couples to the base prompt; the `IContextProvider` **contract is untouched**, but termination *and* the ADR-AGENT-0011 landing both **write into the message list**, so they must be coordinated in the loop.
+- **`sliding-window` stays a transparent `ContextStrategy`**: plumbing, not the agent's job. Not in question.
+- **Memory's home is the open question**: keep it as a transparent `ContextStrategy` (retrieval-into-window), OR move it to an `IMemory` port surfaced as tools, OR both. → the V3 memory ADR.
+- **Termination** (ADR-AGENT-0014): `implicit` default, `explicit` opt-in as an evaluation axis. `explicit` couples to the base prompt; the `ContextStrategy` **contract is untouched**, but termination *and* the ADR-AGENT-0011 landing both **write into the message list**, so they must be coordinated in the loop.
 
 ## Open questions: to verify / decide later
 
 A checklist for whoever writes the V3 memory ADR (and finishes the loop):
 
-1. **Intent of "memory as `IContextProvider`"**: is the current `context/memory` provider meant as *transparent retrieval-into-window* (a legitimate `IContextProvider`), or is it *agentic memory* mislabeled? Verify against the V1 design spec and with the team before building.
+1. **Intent of "memory as `ContextStrategy`"**: is the current `context/memory` provider meant as *transparent retrieval-into-window* (a legitimate `ContextStrategy`), or is it *agentic memory* mislabeled? Verify against the V1 design spec and with the team before building.
 2. **Memory model choice**: transparent vs agentic vs both. Decide **empirically** for NATHAN's use case, the same way termination is decided: make it a harness axis and compare rates, don't decide by opinion.
 3. **`IMemory` port contract (if agentic)**: which operations? `remember` / `recall` / `search` / `forget`? Black-box tools, implementation-swappable behind the port (hexagonal, like every other port here).
 4. **Who owns the scaffolding prompt fragment** (`finish`, `remember`): engine-owned canonical fragment vs author-supplied vs hybrid. Decide **once**, when the capability mechanism is built: it is the same decision for both capabilities.

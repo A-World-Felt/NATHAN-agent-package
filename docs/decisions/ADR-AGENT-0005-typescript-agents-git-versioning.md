@@ -77,4 +77,4 @@ Versioning is only worthwhile if one can **measure** that a v2 of a prompt beats
 
 **General rule that follows, applicable everywhere in the package**
 
-> If a key is a string, it must be typed. The good precedent is `Marcel/src/llm/providers/index.ts:25`: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed, typed, driven by an environment variable.
+> If a key is a string, it must be typed. The good precedent is `Marcel/src/llm/providers/index.ts:25`: `PROVIDERS: Record<ProviderID, () => LLMProvider>`, closed, typed, driven by an environment variable.

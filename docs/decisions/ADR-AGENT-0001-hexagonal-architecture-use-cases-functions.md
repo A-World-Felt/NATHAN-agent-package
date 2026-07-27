@@ -16,12 +16,12 @@ The package must be structured before any code is written.
 
 | Contract | Planned implementations |
 |---|---|
-| `ILLMProvider` | Ollama, Gemini, Azure, external, fake (tests), metrics decorator |
-| `IContextProvider` | sliding window (V1), self-fed memory (V3) |
-| `ITool` | ReadFile, WriteFile, ListFiles, **plus all the consumer's own** |
-| `IVoiceProvider` | Gemini, Azure, external (V4) |
-| `ITokenCounter` | heuristic (V1), real tokenizer (later) |
-| `IMetricsCollector` | in-memory collector |
+| `LLMProvider` | Ollama, Gemini, Azure, external, fake (tests), metrics decorator |
+| `ContextStrategy` | sliding window (V1), self-fed memory (V3) |
+| `Tool` | ReadFile, WriteFile, ListFiles, **plus all the consumer's own** |
+| `VoiceProvider` | Gemini, Azure, external (V4) |
+| `TokenCounter` | heuristic (V1), real tokenizer (later) |
+| `MetricsCollector` | in-memory collector |
 
 This is not a style preference: **it is the very definition of ports and adapters.** A package whose promise is "the consumer repo chooses its provider and brings its own tools" cannot be structured any other way without betraying that promise.
 

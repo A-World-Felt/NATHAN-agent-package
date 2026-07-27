@@ -57,7 +57,7 @@ export class VoiceAgenticLLM {
 | Nature | Form | Examples |
 |---|---|---|
 | **Public API with state and multiple operations** | **class** | `AgenticLLM`, `VoiceAgenticLLM` |
-| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowContext`, the tools |
+| Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowStrategy`, the tools |
 | Pure function for orchestration or computation | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
 
 The rest of the `ADR-AGENT-0001` placement rule is unchanged.

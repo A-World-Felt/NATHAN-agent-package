@@ -11,8 +11,8 @@
 | PR | Content | Completion criterion |
 |---|---|---|
 | **1** | packaging + `models/` + **complete tree** + schema | `npm run build` produces `dist/`; `npm install` succeeds from a test repo |
-| **2** | `ILLMProvider` + `OllamaLLMProvider` + `FakeLLMProvider` | deterministic test on the fake; one real call to Ollama |
-| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | truncation verified, `observe()` no-op |
+| **2** | `LLMProvider` + `OllamaLLMProvider` + `FakeLLMProvider` | deterministic test on the fake; one real call to Ollama |
+| **3** | `ContextStrategy` + `TokenCounter` + `SlidingWindowStrategy` | truncation verified, `observe()` no-op |
 | **4** | `AgenticLLM` + `step()` + `ToolDispatcher` | loop tested **on the fake**: dispatch, `maxIterations`, `stopReason` |
 | **5** | simulator + `defineScenario` + `runScenario` | one end-to-end navigation scenario |
 | **6** | `runMatrix` + metrics + `toJSON`/`toCSV` | a 2 models × 2 memories × 5 runs matrix |
@@ -48,10 +48,10 @@ The types **are** the contract, they are pure, and `tsc` verifies them.
 
 ## PR2: The LLM port and its first two implementations
 
-- `llm/interfaces/ILLMProvider.ts`
+- `llm/interfaces/llm-provider.ts`
 - `llm/providers/ollama/`: real adapter
 - `testing/fake-llm-provider.ts`: scripted responses
-- `llm/providers/index.ts`: `PROVIDERS: Record<ProviderID, () => ILLMProvider>`, closed and typed
+- `llm/providers/index.ts`: `PROVIDERS: Record<ProviderID, () => LLMProvider>`, closed and typed
 
 **The fake provider belongs to this PR, not to the harness.** It is a second implementation of the same port, written at the same time as the port. Two reasons:
 
@@ -68,9 +68,9 @@ The types **are** the contract, they are pure, and `tsc` verifies them.
 
 ## PR3: Context and counting
 
-- `context/interfaces/IContextProvider.ts`: `build()`, `observe()`
-- `context/interfaces/ITokenCounter.ts`
-- `context/providers/sliding-window/`
+- `context/interfaces/context-strategy.ts`: `build()`, `observe()`
+- `context/interfaces/token-counter.ts`
+- `context/strategies/sliding-window/`
 - `HeuristicTokenCounter`: characters ÷ 4, documented as approximate
 
 `observe()` is a no-op here. This is deliberate: adding it in V3 would break an already-published interface.
@@ -126,7 +126,7 @@ Reminder of the three rules (`ADR-AGENT-0006`): `env` is a **factory** (fresh st
 
 ## PR6: The matrix and the metrics
 
-- `metrics/`: `IMetricsCollector`, `MetricsCollector`, pure aggregation
+- `metrics/`: the `MetricsCollector` port, its in-memory implementation, pure aggregation
 - `llm/infrastructure/with-metrics.ts`: the decorator
 - `testing/run-matrix.ts`: cartesian product of the axes, `runs` repetitions, report
 

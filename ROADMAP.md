@@ -24,10 +24,10 @@ It is the criterion that ruled out the generic permissions framework (`ADR-AGENT
 
 | Layer | Contents |
 |---|---|
-| LLM | `ILLMProvider`, `OllamaLLMProvider`, `FakeLLMProvider` |
-| Tools | `ITool`, `dispatchTool`, three file tools (opt-in via `./tools`) |
+| LLM | `LLMProvider`, `OllamaLLMProvider`, `FakeLLMProvider` |
+| Tools | `Tool`, `dispatchTool`, three file tools (opt-in via `./tools`) |
 | Agent | `step()`, `makeRunAgent`, `stopReason` |
-| Context | `IContextProvider`, `SlidingWindowContext`, `ITokenCounter` |
+| Context | `ContextStrategy`, `SlidingWindowStrategy`, `TokenCounter` |
 | Definitions | `defineAgent()` in TypeScript |
 | Harness | simulator, scenarios, matrix, metrics |
 
@@ -42,8 +42,8 @@ Each PR depends only on the previous ones, and **each PR verifies itself**. Full
 | PR | Contents | Completion criterion |
 |---|---|---|
 | **1** | packaging (3 `exports` branches, `tsconfig` ×2) + `models/` + **full tree** + schema | `npm run build` produces `dist/`; `npm install` succeeds from a test repo |
-| **2** | `ILLMProvider` + `OllamaLLMProvider` + **`FakeLLMProvider`** | deterministic test on the fake; one real call to Ollama, output shown |
-| **3** | `IContextProvider` + `ITokenCounter` + `SlidingWindowContext` | an overflowing history is truncated; `observe()` no-op |
+| **2** | `LLMProvider` + `OllamaLLMProvider` + **`FakeLLMProvider`** | deterministic test on the fake; one real call to Ollama, output shown |
+| **3** | `ContextStrategy` + `TokenCounter` + `SlidingWindowStrategy` | an overflowing history is truncated; `observe()` no-op |
 | **4** | `AgenticLLM` (class) + `step()` (pure function) + `ToolDispatcher` | loop tested **on the fake**: dispatch, `maxIterations`, `stopReason` |
 | **5** | simulator + `defineScenario` + `runScenario` | one end-to-end navigation scenario, assertion on the **simulator state** |
 | **6** | `runMatrix` + metrics + `toJSON`/`toCSV` | a 2 × 2 × 5 matrix → 20 runs, one rate per combination, a readable CSV |
@@ -83,9 +83,9 @@ Three ordering points that are not arbitrary:
 
 A `MemoryContextProvider` that feeds itself, in the spirit of a `CLAUDE.md`, but per user, and written by the agent itself over the course of exchanges.
 
-**Plugs in without breaking anything**: `context/strategies/memory/` drops in next to `sliding-window/`, behind the same `IContextProvider`. The engine does not move.
+**Plugs in without breaking anything**: `context/strategies/memory/` drops in next to `sliding-window/`, behind the same `ContextStrategy`. The engine does not move.
 
-This is the port's reason for being: sliding window and memory are **two strategies behind one contract**. Hence `observe()` present as of V1, even if `SlidingWindowContext.observe()` is a literal no-op there. The contract those strategies must respect is frozen by `ADR-AGENT-0016`.
+This is the port's reason for being: sliding window and memory are **two strategies behind one contract**. Hence `observe()` present as of V1, even if `SlidingWindowStrategy.observe()` is a literal no-op there. The contract those strategies must respect is frozen by `ADR-AGENT-0016`.
 
 Accessibility stake: for a blind person dictating their code, an agent that remembers their habits avoids re-explaining everything at each session.
 
@@ -107,14 +107,14 @@ Intentions, not decisions: each one becomes real only if the harness shows it be
 
 ## V4: Voice
 
-`IVoiceProvider` (`transcribe` / `synthesize`), the voice composition on top of `run-agent`, and the voice providers.
+`VoiceProvider` (`transcribe` / `synthesize`), the voice composition on top of `run-agent`, and the voice providers.
 
 **Deliberately deferred.** Two reasons:
 
 1. **Ollama does neither transcription nor synthesis.** Voice in V1 would have forced a second provider and keys from day one, contradicting "start simple".
 2. The agentic package must be finished first (team decision).
 
-`stream()` is in `ILLMProvider` **as of V1** by anticipation: voice synthesis will want to speak while the model writes, not after.
+`stream()` is in `LLMProvider` **as of V1** by anticipation: voice synthesis will want to speak while the model writes, not after.
 
 ---
 
@@ -127,33 +127,33 @@ src/
   index.ts                       "." entry point: engine + ports + types, NO fs
   llm/
     models/index.ts              Message · ToolCall · ToolResult · LLMResponse · Usage · LLMChunk · LLMError
-    interfaces/ILLMProvider.ts
+    interfaces/llm-provider.ts
     services/response-parser.ts        pure: provider JSON → LLMResponse
     providers/
       ollama/ollama-adapter.ts   OllamaLLMProvider
       gemini/gemini-adapter.ts   GeminiLLMProvider           [V2]
       azure/azure-adapter.ts     AzureLLMProvider            [V2]
-      index.ts                   PROVIDERS: Record<ProviderID, () => ILLMProvider>
-    infrastructure/with-metrics.ts     withMetrics (ILLMProvider → IMetricsCollector decorator)
+      index.ts                   PROVIDERS: Record<ProviderID, () => LLMProvider>
+    infrastructure/with-metrics.ts     withMetrics (LLMProvider → MetricsCollector decorator)
   context/
-    interfaces/IContextProvider.ts
-    interfaces/ITokenCounter.ts
+    interfaces/context-strategy.ts
+    interfaces/token-counter.ts
     strategies/                  they differ by algorithm, not by vendor (ADR-AGENT-0016)
-      sliding-window/…           SlidingWindowContext
+      sliding-window/…           SlidingWindowStrategy
       memory/…                   MemoryContextProvider       [V3]
     infrastructure/heuristic-token-counter.ts   HeuristicTokenCounter
   tools/
     models/index.ts              ToolSchema
-    interfaces/ITool.ts
+    interfaces/tool.ts
     application/use-cases/dispatch-tool.ts   dispatchTool ("ToolDispatcher" box from the schema)
     infrastructure/              ReadFile · WriteFile · ListFiles   → exported by "./tools"
   metrics/
     models/index.ts              UsageRecord · MetricsTotal · RateTable
-    interfaces/IMetricsCollector.ts
+    interfaces/metrics-collector.ts
     services/aggregate.ts        pure: records → MetricsTotal (with RateTable)
     infrastructure/collector.ts  MetricsCollector
   voice/                          [V4]: the whole framework
-    interfaces/IVoiceProvider.ts
+    interfaces/voice-provider.ts
     providers/
       gemini/…                   GeminiVoiceProvider
       azure/…                    AzureVoiceProvider
@@ -165,11 +165,11 @@ src/
     application/use-cases/agentic-llm.ts        AgenticLLM (class: public API)
     application/use-cases/voice-agentic-llm.ts  VoiceAgenticLLM (class)   [V4]
   testing/                        → exported by "./testing", never in prod
-    fake-llm-provider.ts         FakeLLMProvider (2nd ILLMProvider implementation)
+    fake-llm-provider.ts         FakeLLMProvider (2nd LLMProvider implementation)
     fake-app.ts · define-scenario.ts · run-scenario.ts · run-matrix.ts
 ```
 
-**Same pattern in each framework**: `models/` (data) · `interfaces/` (ports `I*`) · `services/` (pure functions) · `application/` (dtos + use-cases) · `providers/<vendor>/` and `infrastructure/` (I/O adapters). You learn one component, you know all six.
+**Same pattern in each framework**: `models/` (data) · `interfaces/` (ports, one `kebab-case.ts` per contract) · `services/` (pure functions) · `application/` (dtos + use-cases) · `providers/<vendor>/` and `infrastructure/` (I/O adapters). You learn one component, you know all six.
 
 **Outside the package**: `ExternalLLMProvider` / `ExternalVoiceProvider` (the "External Implementation" band of the schema) are written by the **consumer repo** behind the same ports, not files from here.
 
