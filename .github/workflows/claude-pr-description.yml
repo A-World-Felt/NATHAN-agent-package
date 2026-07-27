@@ -64,10 +64,11 @@ jobs:
             - Only if there are breaking changes, new deps, or migration steps.
             - Omit this section if no notable impact.
 
-            Analyze the diff with `gh pr diff ${{ github.event.pull_request.number }}`, then update the PR with:
-            `gh pr edit ${{ github.event.pull_request.number }} --title "..." --body "..."`
+            Analyze the diff with `gh pr diff ${{ github.event.pull_request.number }}`. Write the body to a file
+            (e.g. pr-body.md) to avoid shell-escaping a multi-line markdown body, then update the PR with:
+            `gh pr edit ${{ github.event.pull_request.number }} --title "..." --body-file pr-body.md`
 
             Keep it minimal and factual. Only include sections that add value for this specific PR.
 
           claude_args: |
-            --allowedTools "Bash(gh pr edit:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(gh pr edit:*),Bash(gh pr diff:*),Bash(gh pr view:*),Write,Read"
