@@ -28,6 +28,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | [ADR-AGENT-0012](ADR-AGENT-0012-framework-independence-core-kernel-subpaths.md) | Framework independence: neutral `core` kernel, per-framework subpaths | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0013](ADR-AGENT-0013-llm-port-capabilities-optional-streaming.md) | The LLM port: required capabilities, optional streaming | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0014](ADR-AGENT-0014-configurable-termination-strategy.md) | Termination strategy as a configurable, empirically-decided axis | ✅ Accepted, complements 0003 and 0011 | 2026-07-22 |
+| [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) | Context strategies are implementations of one port | ✅ Accepted | 2026-07-27 |
 
 ## Upcoming decisions
 
@@ -35,7 +36,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 |---|---|
 | V2 provider (tool-call quality / cost per token / latency) | before the 2nd provider's PR |
 | Real `ITokenCounter` implementation (model family) | when the heuristic shows its limits |
-| Memory boundary: transparent `IContextProvider` vs agentic `IMemory` tools | V3, see docs/theory/2026-07-22-context-memory-and-termination-separation.md |
+| Memory boundary: transparent `ContextProvider` vs agentic memory tools | V3. Constraints it must respect: [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) (the three-member port, composition behind it, the store's own subpath). Framing: docs/theory/2026-07-22-context-memory-and-termination-separation.md |
 | Execution in a container | not before a consumer exposes a shell |
 | User approval before writing | when the IDE repo needs it |
 

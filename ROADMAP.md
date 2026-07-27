@@ -83,11 +83,25 @@ Three ordering points that are not arbitrary:
 
 A `MemoryContextProvider` that feeds itself, in the spirit of a `CLAUDE.md`, but per user, and written by the agent itself over the course of exchanges.
 
-**Plugs in without breaking anything**: `context/providers/memory/` drops in next to `sliding-window/`, behind the same `IContextProvider`. The engine does not move.
+**Plugs in without breaking anything**: `context/strategies/memory/` drops in next to `sliding-window/`, behind the same `IContextProvider`. The engine does not move.
 
-This is the port's reason for being: sliding window and memory are **two strategies behind one contract**. Hence `observe()` present as of V1, even if `SlidingWindowContext.observe()` is a literal no-op there.
+This is the port's reason for being: sliding window and memory are **two strategies behind one contract**. Hence `observe()` present as of V1, even if `SlidingWindowContext.observe()` is a literal no-op there. The contract those strategies must respect is frozen by `ADR-AGENT-0016`.
 
 Accessibility stake: for a blind person dictating their code, an agent that remembers their habits avoids re-explaining everything at each session.
+
+### The strategies intended here
+
+Intentions, not decisions: each one becomes real only if the harness shows it beats the sliding-window baseline.
+
+| Strategy | What it does | Needs |
+|---|---|---|
+| Summarize on saturation | when the budget is reached, replace the oldest exchanges with a summary the strategy keeps up to date via `observe()` | one LLM call inside `build()`, hence the `async` port |
+| Cross-session memory | recall what the user said in earlier sessions, transparently into the window or through `remember` / `recall` tools | a persistent store, and the V3 memory decision |
+| Background probing of what the agent remembers | ask the store what it holds, outside the request path, to keep it honest and prunable | a separate service, **not** a fourth member on the port |
+
+**Packaging consequence, to settle before coding V3**: a persistent store touches disk, and the `.` barrel must stay importable everywhere with no disk access. A store therefore cannot ship through `.`: it needs its own subpath, like `./tools` (`ADR-AGENT-0002`, `ADR-AGENT-0012`).
+
+**Prefix stability, not verified**: the candidate providers bill a previously seen prefix less, so a strategy that keeps a stable prefix and evicts from the middle should be cheaper than one truncating from the front; thresholds, TTLs and Ollama's behaviour are unchecked, and a strategy leaning on this needs a `docs/theory/` document first (`ADR-AGENT-0016`, open question 2).
 
 ---
 
@@ -124,7 +138,7 @@ src/
   context/
     interfaces/IContextProvider.ts
     interfaces/ITokenCounter.ts
-    providers/
+    strategies/                  they differ by algorithm, not by vendor (ADR-AGENT-0016)
       sliding-window/…           SlidingWindowContext
       memory/…                   MemoryContextProvider       [V3]
     infrastructure/heuristic-token-counter.ts   HeuristicTokenCounter

@@ -40,11 +40,14 @@ Each framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) follows 
   application/
     dtos/            Deps, Input, Result, Options
     use-cases/       orchestration ONLY
-  providers/<vendor>/  concrete adapters per provider
+  providers/<vendor>/  concrete adapters per supplier
+  strategies/<name>/   concrete implementations that differ by algorithm
   infrastructure/    other concrete adapters (real I/O)
 ```
 
-`context/` is a **full-fledged framework**, not a subfolder of `agent/`: sliding window and memory are two providers of one same `IContextProvider` port.
+`providers/` or `strategies/`? Look at what varies between two implementations. If it is the **supplier**, it is `providers/<vendor>/`: `llm/providers/ollama/`. If it is the **algorithm**, it is `strategies/<name>/`: `context/strategies/sliding-window/`. A strategy that later talks to an external service keeps that service behind its own port, adapted in `infrastructure/` or `providers/<vendor>/`, so the two axes never mix (`ADR-AGENT-0016`).
+
+`context/` is a **full-fledged framework**, not a subfolder of `agent/`: sliding window and memory are two strategies of one same context port.
 
 ## Placement rule (per-file decision tree)
 
@@ -52,7 +55,7 @@ Each framework (`llm`, `context`, `tools`, `metrics`, `voice`, `agent`) follows 
 2. Interface describing a **port** (`I<X>`) → `interfaces/`
 3. **Pure** function (no disk, no HTTP, no SDK) → `services/`
 4. Function that takes a port and **orchestrates** → `application/use-cases/`
-5. Class implementing a port via **real I/O** → `providers/<vendor>/` or `infrastructure/`
+5. Class implementing a port → `providers/<vendor>/` (differ by **supplier**), `strategies/<name>/` (differ by **algorithm**), or `infrastructure/` for the other concrete adapters with **real I/O**
 
 Invariants that a review treats as real problems:
 
