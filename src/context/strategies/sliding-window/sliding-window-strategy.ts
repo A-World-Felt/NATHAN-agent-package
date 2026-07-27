@@ -106,8 +106,8 @@ function toAtomicUnits(messages: Message[]): AtomicUnit[] {
   for (const message of messages) {
     const openUnit = units[units.length - 1];
     const continuesOpenUnit =
-      message.role === "tool" && openUnit !== undefined && answersUnit(openUnit, message.toolCallId);
-    if (continuesOpenUnit && openUnit !== undefined) {
+      openUnit !== undefined && message.role === "tool" && answersUnit(openUnit, message.toolCallId);
+    if (continuesOpenUnit) {
       openUnit.push(message);
       continue;
     }
