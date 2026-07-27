@@ -88,6 +88,11 @@ export class OllamaLLMProvider implements LLMProvider {
       } catch (cause) {
         throw new LLMError("API_ERROR", `Ollama returned a malformed NDJSON line: ${String(cause)}`, { cause });
       }
+      // LLMChunk declares done as a boolean, and checkProviderContract asserts it. Reject a chunk
+      // without it rather than emit done: undefined, which would break that contract downstream.
+      if (typeof chunk.done !== "boolean") {
+        throw new LLMError("API_ERROR", `Ollama stream chunk has no done boolean: ${line}`);
+      }
       yield {
         contentDelta: chunk.message?.content ?? "",
         done: chunk.done,
