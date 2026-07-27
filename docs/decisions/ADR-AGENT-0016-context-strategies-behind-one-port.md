@@ -74,7 +74,7 @@ Without this, an implementation that carefully budgets its tokens gets that budg
 `build(history: Message[]) => Promise<Message[]>` has **the same type in and out**, so the port is closed under composition. A strategy that adds recalled memory to the window wraps the window instead of being wired next to it:
 
 ```ts
-class MemoryContext implements ContextStrategy {
+class MemoryStrategy implements ContextStrategy {
   constructor(private readonly inner: ContextStrategy, private readonly store: MemoryStore) {}
   get maxTokens() { return this.inner.maxTokens; }
   async build(history: Message[]) {
@@ -149,11 +149,11 @@ Three topologies, three wirings, one unchanged engine:
 
 ```ts
 // transparent
-new AgenticLLM({ llm, context: new MemoryContext(new SlidingWindowStrategy(cfg), store), tools: appTools });
+new AgenticLLM({ llm, context: new MemoryStrategy(new SlidingWindowStrategy(cfg), store), tools: appTools });
 // agentic
 new AgenticLLM({ llm, context: new SlidingWindowStrategy(cfg), tools: [...appTools, remember(store), recall(store)] });
 // both, same store
-new AgenticLLM({ llm, context: new MemoryContext(new SlidingWindowStrategy(cfg), store), tools: [...appTools, remember(store), recall(store)] });
+new AgenticLLM({ llm, context: new MemoryStrategy(new SlidingWindowStrategy(cfg), store), tools: [...appTools, remember(store), recall(store)] });
 ```
 
 Whatever V3 decides, the engine and the contract stay as they are.

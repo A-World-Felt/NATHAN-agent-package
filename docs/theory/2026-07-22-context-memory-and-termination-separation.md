@@ -26,7 +26,7 @@ The first is not the agent's job and is never optional. The second is optional a
 
 ## Memory has two faces: non-exclusive
 
-- **Transparent ("brain")**: memory *fills the window*: retrieval → context injected. In this face memory **is** an `ContextStrategy`. The agent is unaware it exists.
+- **Transparent ("brain")**: memory *fills the window*: retrieval → context injected. In this face memory **is** a `ContextStrategy`. The agent is unaware it exists.
 - **Agentic**: memory is a **capability the agent drives** via tools (`remember` / `recall` / `search`), black-box, behind an `IMemory` port. The agent decides when to store or recall. Precedent: **MemGPT / Letta**.
 
 These are **not rivals**. A serious system may have **both**: a sliding window to fit the token budget *and* memory tools for long-term recall, possibly over the same backend. The question is not "which one" but "which faces do we want, and where do they live."
