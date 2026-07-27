@@ -81,7 +81,7 @@ Three ordering points that are not arbitrary:
 
 **So the agent becomes personalized per person.**
 
-A `MemoryContextProvider` that feeds itself, in the spirit of a `CLAUDE.md`, but per user, and written by the agent itself over the course of exchanges.
+A `MemoryStrategy` that feeds itself, in the spirit of a `CLAUDE.md`, but per user, and written by the agent itself over the course of exchanges.
 
 **Plugs in without breaking anything**: `context/strategies/memory/` drops in next to `sliding-window/`, behind the same `ContextStrategy`. The engine does not move.
 
@@ -140,7 +140,7 @@ src/
     interfaces/token-counter.ts
     strategies/                  they differ by algorithm, not by vendor (ADR-AGENT-0016)
       sliding-window/…           SlidingWindowStrategy
-      memory/…                   MemoryContextProvider       [V3]
+      memory/…                   MemoryStrategy              [V3]
     infrastructure/heuristic-token-counter.ts   HeuristicTokenCounter
   tools/
     models/index.ts              ToolSchema
