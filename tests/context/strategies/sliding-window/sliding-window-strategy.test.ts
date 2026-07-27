@@ -101,7 +101,9 @@ test("build() pins only the leading system messages", async () => {
 
 test("build() does not mutate the history it was given", async () => {
   const history = [SYSTEM, USER_1, ANSWER, USER_2];
-  const before = [...history];
+  // A deep clone, so the assertion also catches a message mutated in place, not only
+  // a spliced or reordered array.
+  const before = structuredClone(history);
   await windowOf(2).build(history);
   assert.deepEqual(history, before);
 });
