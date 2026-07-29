@@ -1,6 +1,6 @@
 {
   "name": "@a-world-felt/nathan-agent-core",
-  "version": "0.1.0-alpha",
+  "version": "0.2.0-alpha",
   "type": "module",
   "description": "NATHAN's LLM agentic layer: engine (providers, tools, loop, memory), agent definitions, and test harness.",
   "main": "./dist/index.js",

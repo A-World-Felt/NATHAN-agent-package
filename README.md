@@ -1,6 +1,6 @@
 # @a-world-felt/nathan-agent-core
 
-> **Current version: 0.1.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.2.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
 
 A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
