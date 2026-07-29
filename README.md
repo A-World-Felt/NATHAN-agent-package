@@ -13,23 +13,32 @@ The reasoning behind each design choice is in [`docs/decisions/`](./docs/decisio
 
 ## Installation
 
-The package is consumed as a **git dependency by tag**: npm clones the repo, reads its `package.json` and resolves it under the scoped name. **No npm token required**: authentication goes through git (SSH, or HTTPS with a GitHub token that has access to the private repo). npm runs the `prepare` (`tsc` build) at install time.
+The package is published to the organization's **GitHub Packages registry** under `A-World-Felt`. The consumer configures the registry for the `@a-world-felt` scope, then installs by **SemVer**.
 
-```bash
-npm i github:A-World-Felt/NATHAN-agent-package#v0.1.0-alpha
+`.npmrc`, at the root of the consumer project:
+
+```
+@a-world-felt:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-In the consumer's `package.json`, the dependency key is the **scoped name**; the value is the git spec:
+```bash
+npm i @a-world-felt/nathan-agent-core@^0.1.0-alpha
+```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "github:A-World-Felt/NATHAN-agent-package#v0.1.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.1.0-alpha"
   }
 }
 ```
 
-You pin a **version** via the tag (`#vX.Y.Z`); to repoint, change the tag (see the versioning convention in [CONTRIBUTING.md](./CONTRIBUTING.md)).
+The registry **requires authentication**, even for reads (the package is private):
+- **Locally**: a GitHub PAT with the `read:packages` scope, exported as `NODE_AUTH_TOKEN` (never committed).
+- **In GitHub Actions**: `actions/setup-node` with `registry-url: https://npm.pkg.github.com` generates the `.npmrc`, and the built-in `GITHUB_TOKEN` is enough.
+
+You pin a SemVer range (`^X.Y.Z`); publishing a new version is described in the versioning convention in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
