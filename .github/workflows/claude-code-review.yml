@@ -7,6 +7,8 @@ on:
       - "src/**/*.ts"
       - "package.json"
       - "tsconfig*.json"
+      # The release pipeline ships artifacts: it is the last thing that should merge unreviewed.
+      - ".github/workflows/**"
 
 jobs:
   claude-review:
