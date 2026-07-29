@@ -40,21 +40,19 @@ test("`.` exposes the context layer", () => {
 // The tests above probe value symbols, which is all a runtime check can reach. A type that left
 // the barrel would slip through: `node --test` strips types without checking them. The lock for
 // those is an annotation, and the gate that enforces it is `npm run typecheck`, not `npm test`.
-test("`.` exposes the port and the types its calls need", () => {
-  const declared: ModelInfo = { id: "probe-model", supportsTools: true };
-  const opts: CompletionOptions = { model: declared.id };
+// Every name below annotates a value that really comes from the package, never a literal written
+// alongside: an assertion on a local object would pass on a barrel stripped of its port.
+test("`.` exposes the port and the types its calls need", async () => {
+  const shipped: LLMProvider = new testing.FakeLLMProvider({
+    responses: [{ content: "ok", toolCalls: [] }],
+  });
+  const declared: ModelInfo[] = shipped.models();
+  const opts: CompletionOptions = { model: declared[0]?.id ?? "" };
 
-  // A structural stand-in for an implementer: annotating it is what pins LLMProvider itself,
-  // and it fails to compile if the port's shape drifts from what a consumer must satisfy.
-  const provider: LLMProvider = {
-    id: "probe",
-    supportsStreaming: () => false,
-    models: () => [declared],
-    complete: async () => ({ content: "", toolCalls: [] }),
-  };
+  const response = await shipped.complete([{ role: "user", content: "hi" }], opts);
 
-  assert.equal(provider.models()[0]?.id, opts.model);
-  assert.equal(provider.supportsStreaming(), false);
+  assert.equal(response.content, "ok");
+  assert.equal(opts.model, testing.FakeLLMProvider.MODEL_ID);
 });
 
 test("`./llm` does not carry the context layer", () => {
