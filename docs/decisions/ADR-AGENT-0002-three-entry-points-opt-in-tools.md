@@ -19,7 +19,7 @@ Explicit team decision: "tools can be added from the consumer repo. The package 
 
 If everything comes out of a single barrel, importing the package just to read a type drags `fs` and the test code along with it.
 
-In-house precedent: `NATHAN-jira-package` has only one `exports` branch. Marcel, for its part, already separates `llm/index.ts` from `llm/server.ts` with an `import "server-only"` guard: the instinct exists.
+In-house precedent: an in-house package already published to the same registry has only one `exports` branch. An in-house Next.js application, for its part, already separates `llm/index.ts` from `llm/server.ts` with an `import "server-only"` guard: the instinct exists.
 
 ## Options considered
 
@@ -63,7 +63,7 @@ An agent receives exactly the tools it is handed. **Nothing implicit.**
 **Negative**
 
 - An `exports` map to maintain: a new subpath is a public-API change.
-- A deviation from `NATHAN-jira-package`, whose map has only one branch. Documented in `CLAUDE.md`.
+- A deviation from that in-house precedent, whose map has only one branch. Documented in `CLAUDE.md`.
 - The barrel-contract tests must cover all three branches, not one.
 
 **Known risk**

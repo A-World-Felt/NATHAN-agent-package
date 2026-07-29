@@ -11,11 +11,11 @@ The harness must be able to present the agent with simulated tools instead of th
 
 Question raised: *"there would be either an abstraction before `ToolDispatcher`, or after, since the power of our architecture is that the agent does not know the tools' implementation."*
 
-The intuition came from Meastro, which has exactly this mechanism: `_toolMapping` (`ToolDispatcherBlockExecutor.cs:62-73`), a table that redirects tool identifiers to capture blocks. The dispatcher substitutes transparently and keeps the original identifier for assertions.
+The intuition came from an in-house C# backend, which has exactly this mechanism: a redirection table that redirects tool identifiers to capture blocks. The dispatcher substitutes transparently and keeps the original identifier for assertions.
 
-## Why Meastro needs it, and we do not
+## Why that backend needs it, and we do not
 
-**At Meastro, a tool is a manifest on disk resolved by identifier at runtime** (`*.tool.block.json`, discovered by `IBlockDiscoveryService`, resolved via `registry.Get(blockType)`). There is no way to inject another implementation: the dispatcher fetches the tool by its name. The only way to substitute is therefore **a redirection table in the middle**.
+**At that backend, a tool is a manifest on disk resolved by identifier at runtime**, discovered by a block discovery service and resolved through a registry lookup. There is no way to inject another implementation: the dispatcher fetches the tool by its name. The only way to substitute is therefore **a redirection table in the middle**.
 
 **For us, `Tool` is an interface and tools are passed as objects.** Substitution is already possible, and it happens at construction:
 
@@ -29,7 +29,7 @@ new AgenticLLM({ tools: app.tools })            // simulator
 ## Options evaluated
 
 **A: Substitution table in the `ToolDispatcher`.**
-Modeled on Meastro. Redirects `name → replacement implementation` at runtime.
+Modeled on that backend's mechanism. Redirects `name → replacement implementation` at runtime.
 
 **B: A second `ToolDispatcher` dedicated to the harness.**
 Two dispatch paths to maintain, which will diverge. And the harness would no longer test the real dispatcher.
@@ -48,7 +48,7 @@ No table, no redirection, no lookup by name. The harness builds an `AgenticLLM` 
 
 - **Zero code.** The capability sought is a side effect of dependency injection, not a feature to write.
 - **The harness tests the real dispatcher**, not a test variant. A single code path between development and production.
-- **No added attack surface.** This is trap no. 6 noted at Meastro: `_toolMapping` there is a plain session variable, propagated across sessions (`BlockRefHandler.cs:191`). If an agent can write session variables, it can rewire its own tools. A runtime redirection table reimplements dependency injection, less safely.
+- **No added attack surface.** This is trap no. 6 noted at that backend: the redirection table there is a plain session variable, propagated across sessions. If an agent can write session variables, it can rewire its own tools. A runtime redirection table reimplements dependency injection, less safely.
 - Consistent with `ADR-AGENT-0005`: no lookup by name, no untyped `string` key.
 
 **Negative**

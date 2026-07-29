@@ -58,7 +58,7 @@ export type AgentResult = {
 - One fewer failure mode: no more "the model forgot to call `isDone`".
 - One fewer slot in the tool list presented to the model.
 - **The harness controls tool execution instead of being subjected to it**: it is `step()` that makes the simulator possible (`ADR-AGENT-0006`).
-- User approval before a risky operation becomes genuinely implementable later: the suspension plumbing already exists. This is exactly what Meastro lacks, whose `RequiresApproval` level asks for nothing and merely returns an error to the model.
+- User approval before a risky operation becomes genuinely implementable later: the suspension plumbing already exists. This is exactly what an in-house C# backend lacks: its approval-required permission level asks for nothing and merely returns an error to the model.
 - `stopReason` gives the harness a clean assertion criterion ("did the agent stop in the right place").
 
 **Negative**

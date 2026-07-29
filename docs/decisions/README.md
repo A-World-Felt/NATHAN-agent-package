@@ -49,8 +49,8 @@ The real consumer is **NATHAN's accessible IDE**, built in `PMC/`. It is the one
 
 The neighboring repos are **neither references nor authorities**: the team does not know them, and none is the package's consumer. They served as analysis material, cited as dated evidence:
 
-| Repo | What was drawn from it | What it cannot settle |
+| Source | What was drawn from it | What it cannot settle |
 |---|---|---|
-| `C:\Marcel` | the `feature: string` field that drifted in production → "a string key must be typed" | API design: it exposes none (`ADR-AGENT-0009`) |
-| `C:\Meastro` | tool-execution and permission counter-examples (`ADR-AGENT-0004`) | nothing else: "does too much" is the reason to redo it |
-| `NATHAN-jira-package` | packaging conventions (scope, registry, ESM, `tsc` build) | internal structure: it is flat, with no variants to absorb |
+| an in-house Next.js application | the `feature: string` field that drifted in production → "a string key must be typed" | API design: it exposes none (`ADR-AGENT-0009`) |
+| an in-house C# backend | tool-execution and permission counter-examples (`ADR-AGENT-0004`) | nothing else: "does too much" is the reason to redo it |
+| an in-house package already published to the same registry | packaging conventions (scope, registry, ESM, `tsc` build) | internal structure: it is flat, with no variants to absorb |

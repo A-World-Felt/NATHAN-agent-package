@@ -52,7 +52,7 @@ Time-driven accumulation is **ambient state**, with two certain failure modes:
 - **Tests run in parallel.** Two concurrent scenarios accumulate into the same object. The metrics become noise, with no visible error.
 - **A forgotten `stop()`** leaks one test's metrics into the next.
 
-This is exactly the trap noted at Meastro: sensitive state travelling in a shared ambient bag (`_toolMapping`, `context.Variables[...]`).
+This is exactly the trap noted at an in-house C# backend: sensitive state, including the redirection table, travelling in a shared ambient bag of session variables.
 
 With per-instance scope, each run builds its own collector: parallel-safe by construction, and for the multi-model eval, one collector per run naturally yields one row per run.
 
@@ -77,7 +77,7 @@ The join key is `LLMProvider.model`, already present in the original diagram.
 
 1. **Explicit units.** Per token, per thousand, per million? That is the first source of error with this kind of table. The unit must be in the type name or in a mandatory comment.
 2. **Absent ≠ zero.** A local model is not free, it is *not billed*: it consumes time, electricity, VRAM. If Ollama comes out at `$0`, it wins every cost comparison without that meaning anything. Report `null`, and let the duration column be read alongside it.
-3. **No composite score.** Meastro computes a single `FitnessScore`: `(P × S × W) / (C_norm × C_compute × C_hw)^λ`. One λ to tune, and you can no longer tell whether a model wins because it succeeds more often or because it costs less. Emit the dimensions separately: success rate, cost, latency. The trade-off belongs to the human.
+3. **No composite score.** That backend computes a single fitness score: `(P × S × W) / (C_norm × C_compute × C_hw)^λ`. One λ to tune, and you can no longer tell whether a model wins because it succeeds more often or because it costs less. Emit the dimensions separately: success rate, cost, latency. The trade-off belongs to the human.
 
 ## Consequences
 
