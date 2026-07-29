@@ -1,6 +1,6 @@
 # @a-world-felt/nathan-agent-core
 
-> **Current version: 0.2.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.3.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
 
 A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
@@ -23,13 +23,13 @@ The package is published to the organization's **GitHub Packages registry** unde
 ```
 
 ```bash
-npm i @a-world-felt/nathan-agent-core@^0.2.0-alpha
+npm i @a-world-felt/nathan-agent-core@^0.3.0-alpha
 ```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "^0.2.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.3.0-alpha"
   }
 }
 ```
@@ -93,14 +93,14 @@ Under NodeNext, your own relative imports also carry the `.js` extension, even f
 
 Four subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
-| Subpath | Contents | State in `0.2.0-alpha` |
+| Subpath | Contents | State in `0.3.0-alpha` |
 |---|---|---|
 | `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models, LLM layer, context layer) |
 | `./llm` | LLM layer: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry + `resolveProvider`, and the LLM models | **available** |
 | `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
 | `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.2.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
+> In `0.3.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
 
 ### What `.` exports
 
