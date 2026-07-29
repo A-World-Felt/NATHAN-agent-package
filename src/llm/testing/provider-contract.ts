@@ -111,10 +111,12 @@ export async function checkProviderContract(
   });
 
   await check("each model has an id and a supportsTools boolean", () => {
-    const badIndex = provider.models().findIndex(isMalformedModel);
-    return badIndex === -1
-      ? true
-      : { ok: false, detail: `model #${badIndex} = ${seen(provider.models()[badIndex])}` };
+    // Bound once: models() belongs to the provider under test, so calling it twice could
+    // return two different lists and report an index against the wrong one.
+    const models = provider.models();
+    const badIndex = models.findIndex(isMalformedModel);
+    if (badIndex === -1) return true;
+    return { ok: false, detail: `model #${badIndex} = ${seen(models[badIndex])}` };
   });
 
   await check("supportsStreaming() returns a boolean", () => {
