@@ -120,7 +120,7 @@ This is the same scheme as the rest of the project (`PMC/CONTEXT-AGENT.md` §10.
 ### 5.1 Files
 
 - **Strict TypeScript**: no `any` without a comment that justifies it.
-- Files in **`kebab-case.ts`**; ports in **`IPascalCase.ts`** (`ILLMProvider.ts`, `IContextProvider.ts`).
+- Files in **`kebab-case.ts`**, named after their main export. **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`, `ContextStrategy` in `context-strategy.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `SlidingWindowStrategy`).
 - **One `index.ts` barrel per layer.** Consumers (internal and external alike) import **from the barrel**, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. An export removed by mistake breaks a test, not a consumer.
 - `models/`: types only, no runtime dependency, no SDK import.
