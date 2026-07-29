@@ -80,6 +80,8 @@ export async function checkProviderContract(
   const checks: ContractCheck[] = [];
 
   // The model to exercise: the caller's, else the first one the provider declares (ADR-AGENT-0017).
+  // A caller passing its own must pass a declared one, since the guard checked below refuses the
+  // rest: an undeclared model here surfaces as "complete() resolves" failing with MODEL_NOT_FOUND.
   // models() belongs to the provider under test, so it may throw; a failure here is recorded
   // by the checks below rather than crashing the run.
   const declaredModels = readDeclaredModels(provider);

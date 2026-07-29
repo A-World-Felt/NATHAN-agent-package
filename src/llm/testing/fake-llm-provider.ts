@@ -52,6 +52,8 @@ export class FakeLLMProvider implements LLMProvider {
   async complete(messages: Message[], opts: CompletionOptions): Promise<LLMResponse> {
     this.assertDeclared(opts.model);
     this.calls.push({ messages, opts });
+    // A bare Error, not an LLMError: running out of script is the harness being misused, not a
+    // provider failing. Only the first kind is something a consumer's code should ever handle.
     if (this.cursor >= this.script.length) {
       throw new Error(`FakeLLMProvider: no scripted response for call #${this.cursor + 1}`);
     }
