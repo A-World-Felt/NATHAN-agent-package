@@ -27,7 +27,7 @@ export type ToolCall = {
 
 /**
  * A tool as presented to the model: name + description + parameter schema.
- * llm owns this face-to-model contract (ADR-AGENT-0012); the agent builds it from an ITool.
+ * llm owns this face-to-model contract (ADR-AGENT-0012); the agent builds it from a Tool.
  */
 export type ToolDefinition = {
   name: string;
@@ -63,12 +63,26 @@ export type LLMChunk = {
   usage?: Usage;
 };
 
+/**
+ * A model a provider offers. Declared in configuration, never queried (ADR-AGENT-0017):
+ * vendors expose their capabilities in incompatible shapes, and the consumer who installs
+ * the models is the one who can keep the list honest.
+ */
+export type ModelInfo = {
+  /** What goes into the request body: "qwen2.5:7b". */
+  id: string;
+  /** Required: whoever declares a model answers for it. */
+  supportsTools: boolean;
+  maxInputTokens?: number;
+};
+
 /** Error codes surfaced by a provider. Closed union: a string key must be typed. */
 export type LLMErrorCode =
   | "MISSING_API_KEY"
   | "API_ERROR"
   | "UNKNOWN_PROVIDER"
-  | "STREAMING_UNSUPPORTED";
+  | "STREAMING_UNSUPPORTED"
+  | "MODEL_NOT_FOUND";
 
 /**
  * Provider error. Unlike a tool failure, it propagates up (CLAUDE.md).

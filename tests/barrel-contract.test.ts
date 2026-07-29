@@ -5,7 +5,7 @@ import * as llm from "@a-world-felt/nathan-agent-core/llm";
 import * as testing from "@a-world-felt/nathan-agent-core/testing";
 
 test("`.` exposes the engine surface", () => {
-  for (const name of ["LLMError", "OllamaLLMProvider", "PROVIDERS", "resolveProvider"]) {
+  for (const name of ["LLMError", "OllamaLLMProvider", "PROVIDERS", "resolveProvider", "DEFAULT_OLLAMA_MODEL"]) {
     assert.equal(typeof (root as Record<string, unknown>)[name] !== "undefined", true, `missing ${name}`);
   }
 });

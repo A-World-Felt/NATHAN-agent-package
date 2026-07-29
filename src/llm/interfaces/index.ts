@@ -1,1 +1,1 @@
-export type { LLMProvider } from "./llm-provider.js";
+export type { LLMProvider, CompletionOptions } from "./llm-provider.js";

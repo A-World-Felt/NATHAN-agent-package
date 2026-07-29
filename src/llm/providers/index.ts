@@ -5,15 +5,26 @@ import type { LLMProvider } from "../interfaces/index.js";
 export { OllamaLLMProvider } from "./ollama/ollama-llm-provider.js";
 export type { OllamaConfig } from "./ollama/ollama-llm-provider.js";
 
-/** Closed, typed union of provider ids (CLAUDE.md: a string key must be typed). Grows per provider. */
+/**
+ * Closed, typed union of the provider ids this package ships (CLAUDE.md: a string key must
+ * be typed). It types the keys of {@link PROVIDERS}, not the identity of every implementer:
+ * a consumer's own provider carries an id the registry has never heard of.
+ */
 export type ProviderID = "ollama";
+
+/** The model `PROVIDERS.ollama()` declares when the environment names none. */
+export const DEFAULT_OLLAMA_MODEL = "qwen2.5:0.5b";
 
 /**
  * Ollama provider factory. A function, not a `new` at module load, so process.env is read
  * at call time: the app loads its .env, the library reads process.env (ADR-AGENT-0002).
+ *
+ * It declares a single model, the environment-driven shortcut. Offering several is the
+ * explicit path: `new OllamaLLMProvider({ models: [...] })` (ADR-AGENT-0017).
  */
 function makeOllama(): LLMProvider {
-  return new OllamaLLMProvider({ model: process.env.OLLAMA_MODEL ?? "qwen2.5:0.5b" });
+  const model = process.env.OLLAMA_MODEL ?? DEFAULT_OLLAMA_MODEL;
+  return new OllamaLLMProvider({ models: [{ id: model, supportsTools: true }] });
 }
 
 /**

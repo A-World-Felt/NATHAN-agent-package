@@ -1,9 +1,10 @@
-import type { LLMProvider } from "../interfaces/index.js";
-import type { Message, ToolDefinition, LLMResponse } from "../models/index.js";
+import type { CompletionOptions, LLMProvider } from "../interfaces/index.js";
+import type { Message, ModelInfo, LLMResponse } from "../models/index.js";
 
 export type FakeConfig = {
-  model?: string;
-  supportsTools?: boolean;
+  id?: string;
+  /** Models this fake declares. Defaults to a single tool-capable one. */
+  models?: ModelInfo[];
   /** One scripted response per `complete()` call, in order. */
   responses: LLMResponse[];
 };
@@ -14,28 +15,28 @@ export type FakeConfig = {
  * It records every call so a test can assert what the loop sent (e.g. "the last call had no tools").
  */
 export class FakeLLMProvider implements LLMProvider {
-  readonly model: string;
-  readonly calls: { messages: Message[]; tools?: ToolDefinition[] }[] = [];
-  private readonly toolsSupported: boolean;
+  readonly id: string;
+  readonly calls: { messages: Message[]; opts: CompletionOptions }[] = [];
+  private readonly declaredModels: ModelInfo[];
   private readonly script: LLMResponse[];
   private cursor = 0;
 
   constructor(config: FakeConfig) {
-    this.model = config.model ?? "fake";
-    this.toolsSupported = config.supportsTools ?? true;
+    this.id = config.id ?? "fake";
+    this.declaredModels = config.models ?? [{ id: "fake-model", supportsTools: true }];
     this.script = config.responses;
   }
 
-  supportsTools(): boolean {
-    return this.toolsSupported;
+  models(): ModelInfo[] {
+    return this.declaredModels;
   }
 
   supportsStreaming(): boolean {
     return false;
   }
 
-  async complete(messages: Message[], tools?: ToolDefinition[]): Promise<LLMResponse> {
-    this.calls.push({ messages, tools });
+  async complete(messages: Message[], opts: CompletionOptions): Promise<LLMResponse> {
+    this.calls.push({ messages, opts });
     if (this.cursor >= this.script.length) {
       throw new Error(`FakeLLMProvider: no scripted response for call #${this.cursor + 1}`);
     }

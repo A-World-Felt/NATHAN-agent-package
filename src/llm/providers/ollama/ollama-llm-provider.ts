@@ -1,7 +1,8 @@
 import { LLMError } from "../../models/index.js";
-import type { LLMProvider } from "../../interfaces/index.js";
+import type { CompletionOptions, LLMProvider } from "../../interfaces/index.js";
 import type {
   Message,
+  ModelInfo,
   ToolCall,
   ToolDefinition,
   LLMResponse,
@@ -13,10 +14,9 @@ import type {
 type FetchLike = typeof fetch;
 
 export type OllamaConfig = {
-  model: string;
+  /** The models this provider offers, declared rather than queried (ADR-AGENT-0017). */
+  models: ModelInfo[];
   baseURL?: string;
-  /** Whether the model supports tool calls. Default true (verified for qwen2.5). See ADR-0013. */
-  supportsTools?: boolean;
   /** Injectable for tests; defaults to global fetch. */
   fetch?: FetchLike;
 };
@@ -40,20 +40,19 @@ type OllamaRequestMessage = {
 };
 
 export class OllamaLLMProvider implements LLMProvider {
-  readonly model: string;
+  readonly id = "ollama";
+  private readonly declaredModels: ModelInfo[];
   private readonly baseURL: string;
-  private readonly toolsSupported: boolean;
   private readonly fetchFn: FetchLike;
 
   constructor(config: OllamaConfig) {
-    this.model = config.model;
+    this.declaredModels = config.models;
     this.baseURL = config.baseURL ?? process.env.OLLAMA_HOST ?? "http://localhost:11434";
-    this.toolsSupported = config.supportsTools ?? true;
     this.fetchFn = config.fetch ?? fetch;
   }
 
-  supportsTools(): boolean {
-    return this.toolsSupported;
+  models(): ModelInfo[] {
+    return this.declaredModels;
   }
 
   // Ollama streams every chat model over its transport; capability is not per-model here.
@@ -61,8 +60,8 @@ export class OllamaLLMProvider implements LLMProvider {
     return true;
   }
 
-  async complete(messages: Message[], tools?: ToolDefinition[]): Promise<LLMResponse> {
-    const res = await this.post(messages, tools, false);
+  async complete(messages: Message[], opts: CompletionOptions): Promise<LLMResponse> {
+    const res = await this.post(messages, opts, false);
     let body: OllamaChatChunk;
     try {
       body = (await res.json()) as OllamaChatChunk;
@@ -76,8 +75,8 @@ export class OllamaLLMProvider implements LLMProvider {
     };
   }
 
-  async *stream(messages: Message[], tools?: ToolDefinition[]): AsyncIterable<LLMChunk> {
-    const res = await this.post(messages, tools, true);
+  async *stream(messages: Message[], opts: CompletionOptions): AsyncIterable<LLMChunk> {
+    const res = await this.post(messages, opts, true);
     if (!res.body) {
       throw new LLMError("API_ERROR", "Ollama streaming response has no body");
     }
@@ -101,16 +100,17 @@ export class OllamaLLMProvider implements LLMProvider {
     }
   }
 
-  private async post(messages: Message[], tools: ToolDefinition[] | undefined, stream: boolean): Promise<Response> {
+  private async post(messages: Message[], opts: CompletionOptions, stream: boolean): Promise<Response> {
+    this.assertDeclared(opts.model);
     let res: Response;
     try {
       res = await this.fetchFn(`${this.baseURL}/api/chat`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model: this.model,
+          model: opts.model,
           messages: messages.map(toRequestMessage),
-          tools: tools?.map(toRequestTool),
+          tools: opts.tools?.map(toRequestTool),
           stream,
         }),
       });
@@ -118,9 +118,29 @@ export class OllamaLLMProvider implements LLMProvider {
       throw new LLMError("API_ERROR", `Ollama request failed: ${String(cause)}`, { cause });
     }
     if (!res.ok) {
-      throw new LLMError("API_ERROR", `Ollama ${res.status}: ${await res.text()}`);
+      const body = await res.text();
+      // A declared model the server does not hold: the 404 is turned into the command that fixes it.
+      // The server's own body is kept, since a 404 on a wrong baseURL lands here too and only it says so.
+      if (res.status === 404) {
+        throw new LLMError(
+          "MODEL_NOT_FOUND",
+          `Ollama on ${this.baseURL} has no model '${opts.model}'. Install it with: ollama pull ${opts.model}. Server said: ${body}`,
+        );
+      }
+      throw new LLMError("API_ERROR", `Ollama ${res.status}: ${body}`);
     }
     return res;
+  }
+
+  /** A model absent from the declaration never reaches the network: the error names what is on offer. */
+  private assertDeclared(model: string): void {
+    const isDeclared = this.declaredModels.some((declared) => declared.id === model);
+    if (isDeclared) return;
+    const offered = this.declaredModels.map((declared) => declared.id).join(", ");
+    throw new LLMError(
+      "MODEL_NOT_FOUND",
+      `Model '${model}' is not declared on this provider. Declared: ${offered}`,
+    );
   }
 }
 
