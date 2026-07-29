@@ -1,12 +1,16 @@
 name: Publish to GitHub Packages
 
+# Publication is driven by the version field, not by a hand-pushed tag.
+# A merge into main whose package.json carries a version that was never published
+# builds, publishes, and only then tags the merge commit. A merge that bumped
+# nothing falls through and does nothing.
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 permissions:
-  contents: read
+  contents: write # needed to push the release tag back
   packages: write
 
 jobs:
@@ -17,20 +21,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Read the version and check whether it is already published
+        id: version
+        run: |
+          # npm reads the field itself: no node -e, so no CommonJS versus ESM question
+          # in a "type": "module" package. The value comes back quoted, hence the tr.
+          VERSION=$(npm pkg get version | tr -d '"')
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          # Ask the remote rather than the local clone: the default checkout is shallow
+          # and carries no tags, so a local lookup would always answer "not found".
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Version v$VERSION is already tagged, nothing to publish."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version v$VERSION has no tag yet, publishing."
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node.js
+        if: steps.version.outputs.new == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@a-world-felt'
 
-      - name: Install dependencies (sans lifecycle scripts pour eviter double build)
+      - name: Install dependencies (no lifecycle script, to avoid building twice)
+        if: steps.version.outputs.new == 'true'
         run: npm ci --ignore-scripts
 
       - name: Build
+        if: steps.version.outputs.new == 'true'
         run: npm run build
 
+      - name: Test
+        if: steps.version.outputs.new == 'true'
+        run: node --test
+
       - name: Publish
+        if: steps.version.outputs.new == 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag last, and only on success. A tag written before publishing would claim a
+      # version that never reached the registry, and the guard above would then skip
+      # the retry forever. Failing without a tag lets the next merge try again.
+      - name: Tag the published commit
+        if: steps.version.outputs.new == 'true'
+        run: |
+          git tag "v${{ steps.version.outputs.value }}"
+          git push origin "v${{ steps.version.outputs.value }}"
