@@ -1,6 +1,6 @@
 # ADR-AGENT-0013: The LLM port: required capabilities, optional streaming
 
-- **Status**: ✅ Accepted
+- **Status**: ✅ Accepted, partially superseded by ADR-AGENT-0017 (the port's `readonly model`, per-instance capabilities, and the no-per-call-config rule)
 - **Date**: 2026-07-22
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
