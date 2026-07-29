@@ -144,7 +144,7 @@ Two versionings not to be confused.
 1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.2.0-alpha`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
 2. Update **Current version** in `README.md`.
 3. Commit: `chore: bump vX.Y.Z (JIRAID)`, **on the feature branch, inside the PR**. The reviewer therefore sees the version being shipped, in the diff, before it ships.
-4. Merge. `.github/workflows/publish.yml` fires on `push: main`, reads the version, and stops there if a `vX.Y.Z` tag already exists. Otherwise it builds, runs the tests, publishes, and **then** tags the merge commit.
+4. Merge. `.github/workflows/publish.yml` fires on `push: main`, reads the version, and stops there if a `vX.Y.Z` tag already exists. Otherwise it builds, publishes, and **then** tags the merge commit.
 5. Consumers repoint their SemVer range (`^X.Y.Z`).
 
 **Nobody creates a tag by hand.** The tag is a consequence of the publication, not its trigger, and it is what tells you later which commit a published version was built from: exactly what you need to cut a fix on top of a shipped release.
