@@ -89,13 +89,17 @@ jobs:
             **Published version** (`CONTRIBUTING.md` section 5.3)
             - a PR touching the public API (new port, new barrel export, new entry point) must
               **raise the version** in `package.json`, and the same value must appear in the
-              "Current version" line of `README.md`. The two disagreeing is a real problem:
-              that number is what gets published on merge.
-            - the version must be **strictly above** the one on `main`. Compare with
-              `git show origin/main:package.json`. While in `0.x`, a backwards-compatible
-              addition is a *minor* bump.
+              "Current version" line of `README.md`. If the two disagree, that is a real
+              problem: this number is what gets published on merge.
+            - read both sides from `gh pr diff`. The diff is taken against `main`, so the `-`
+              line of `package.json` already carries the version currently on `main` and the
+              `+` line carries the proposed one. Do not try to fetch `main` yourself: the
+              checkout is shallow and no git command is available to you.
+            - the new version must be **strictly above** the old one. While in `0.x`, a
+              backwards-compatible addition is a *minor* bump.
             - a documentation, test or internals-only PR does not bump: flag an unjustified
-              bump as readily as a missing one.
+              bump as readily as a missing one. When `package.json` is absent from the diff,
+              judge from the diff whether the public API moved, and say so if a bump is owed.
 
             **Safety**
             - never a hard-coded API key: environment variables only
