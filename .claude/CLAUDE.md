@@ -81,7 +81,7 @@ src/
   context/                      # peer framework, 2 strategies, 1 contract
     interfaces/context-strategy.ts
     interfaces/token-counter.ts
-    strategies/                   they differ by algorithm, not by vendor
+    strategies/
       sliding-window/             V1: SlidingWindowStrategy and its pure helpers
       memory/                     V3, plugs in here without touching the agent
     infrastructure/heuristic-token-counter.ts
@@ -123,7 +123,7 @@ src/
 
 `llm/infrastructure/with-metrics.ts`: a decorator that implements `LLMProvider` and relays to a `MetricsCollector`. It lives where it wraps.
 
-`context/` is a **framework in its own right**, not a subfolder of `agent/`: many implementations serve one contract, so they are nested one folder each. Sliding window and memory are two **strategies** of the same port, not two vendors, hence `strategies/` and not `providers/`, and hence the port is `ContextStrategy` and not `ContextProvider` (`ADR-AGENT-0016`).
+`context/` is a **framework in its own right**, not a subfolder of `agent/`: many implementations serve one contract, so they are nested one folder each. Sliding window and memory differ by **algorithm**, hence `strategies/` and the port `ContextStrategy` (`ADR-AGENT-0016`).
 
 `testing/` is **not** a top-level framework. Shipped test tooling co-locates under each framework's own `testing/` subfolder (`llm/testing/`, later `agent/testing/`) because it is that framework's functionality, not a cross-cutting concern. The top-level `testing/index.ts` only **aggregates** them behind the one `./testing` subpath. A framework's production barrel never exports its `testing/`, so the tooling reaches consumers through `./testing` only, never through `.` or `./llm`.
 
@@ -191,7 +191,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 - TypeScript strict: no `any` without a justifying comment.
 - Files in `kebab-case.ts`, named after their main export (`ollama-llm-provider.ts` holds `OllamaLLMProvider`).
 - **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `FakeLLMProvider`). The structural type system makes the `I` marker unnecessary.
-  - **The rule holds in the documentation and the diagrams too.** A name written in a doc must be findable in the code: an ADR that says `ITokenCounter` sends a reader grepping for a symbol that does not exist, and they conclude the doc has drifted. On the diagrams the marker is already there: a port box carries the UML stereotype `<< interface >>` above its name, so the `I` would only duplicate it.
+  - **The rule holds in the documentation and the diagrams too.** A name written in a doc must be findable in the code: an `I`-prefixed name in an ADR sends a reader grepping for a symbol that does not exist, and they conclude the doc has drifted. On the diagrams the marker is already there: a port box carries the UML stereotype `<< interface >>` above its name, so the `I` would only duplicate it.
   - External code quoted as evidence keeps the convention of its own language.
 - A barrel `index.ts` per layer; consumers import from the barrel, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. Valuable for a package: an export removed by mistake breaks a test, not a consumer.
