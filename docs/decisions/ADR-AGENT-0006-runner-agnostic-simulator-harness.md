@@ -109,7 +109,7 @@ A web interface is envisaged later. It has no place in a library: `toJSON()` / `
 
 **No substitution table is necessary**
 
-That backend needs a redirection table because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
+An in-house C# backend needs a redirection table because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
 
 Here, `Tool` is an interface and tools are passed as objects: substitution happens **at construction**, simply by passing different objects. The abstraction is the interface itself. See `ADR-AGENT-0010`.
 
