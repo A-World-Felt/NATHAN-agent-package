@@ -176,7 +176,7 @@ const result = await agent.run("amène-moi aux réglages");
 
 `defineAgent()` is a pure function that returns a typed object. Agents are exported `const`s, imported statically. **No lookup by name, no untyped `string` key.**
 
-The failure mode to avoid, observed in production in that application:
+The failure mode to avoid, observed in production in an in-house Next.js application:
 
 ```ts
 feature: string;  // 'generation' | 'replace' | 'chat' | 'coverage-check' | etc.
@@ -203,7 +203,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 
 ## Packaging conventions
 
-Taken from an in-house package already published to the same registry, the only in-house precedent. That Next.js application cannot serve here: it is `private: true` and is never published.
+Taken from an in-house package already published to the same registry, the only precedent available. The in-house Next.js application mentioned earlier cannot serve here: it is `private: true` and is never published.
 
 | Decision | Value |
 |---|---|
