@@ -141,8 +141,10 @@ Two versionings not to be confused.
 
 **The package** is on **SemVer** (`version` in `package.json`) and published to the organization's **GitHub Packages registry**. Publication is **driven by the version field**, and the whole release fits in the PR: the only thing you do by hand is bump the number.
 
-1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.2.0-alpha`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
-2. Update **Current version** in `README.md`.
+**Every PR that changes the public API bumps the version**, in the PR itself. While the package is in `0.x`, an addition to the public surface is a **minor** bump: a PR that ships a new port, a new entry point or a new exported class goes `0.1.0-alpha` to `0.2.0-alpha`. A PR that only touches documentation, tests or internals changes nothing.
+
+1. Change `version` in `package.json`. Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
+2. Update **Current version** in `README.md`. The two must agree: the review workflow checks it.
 3. Commit: `chore: bump vX.Y.Z (JIRAID)`, **on the feature branch, inside the PR**. The reviewer therefore sees the version being shipped, in the diff, before it ships.
 4. Merge. `.github/workflows/publish.yml` fires on `push: main`, reads the version, and stops there if a `vX.Y.Z` tag already exists. Otherwise it builds, publishes, and **then** tags the merge commit.
 5. Consumers repoint their SemVer range (`^X.Y.Z`).
@@ -153,6 +155,6 @@ Two versionings not to be confused.
 
 **The tag is written after `npm publish`, never before.** A tag placed first would claim a version that never reached the registry, and the guard would then skip the retry forever. If publication fails, no tag is written, and the next merge tries again.
 
-**Never tag a feature branch.** PRs land here with *Rebase and merge*, which replays the commits under new hashes, so a tag placed on a branch designates a lineage `main` never receives. This is also why the workflow tags from `main` and not from the PR.
+**Never tag a feature branch.** PRs land here with *Rebase and merge*, which replays the commits under new hashes, so a tag placed on a branch designates a lineage `main` never receives. The failure mode is not hypothetical: it is what happened on the first release attempt of this package. This is also why the workflow tags from `main` and not from the PR.
 
 **Agents**, on the other hand, are **not** versioned by a field: an agent is a committed TypeScript file, the version is git, and "this version is good" is what the tests/evals prove. No `version` field, no runtime registry. See `ROADMAP.md` and `ADR-AGENT-0005`. Versioning a prompt is only worthwhile if the harness can **measure** that v2 beats v1.
