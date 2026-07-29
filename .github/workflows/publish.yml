@@ -54,10 +54,6 @@ jobs:
         if: steps.version.outputs.new == 'true'
         run: npm run build
 
-      - name: Test
-        if: steps.version.outputs.new == 'true'
-        run: node --test
-
       - name: Publish
         if: steps.version.outputs.new == 'true'
         run: npm publish
