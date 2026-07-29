@@ -211,5 +211,5 @@ Versioning and evaluation are the same feature seen from two angles: versioning 
 | Container execution | same, and it is the **only** true security boundary |
 | User approval before writing | when the IDE repo needs it; `step()` makes it cheap |
 | Real tokenizer per model family | when calibration shows drift beyond margin |
-| Tool rendering in prompt (models without native calls) | when `supportsTools()` returns `false` on a targeted model |
+| Tool rendering in prompt (models without native calls) | when a targeted model is declared with `supportsTools: false` |
 | Web interface for reports | in the IDE repo, never in the package |

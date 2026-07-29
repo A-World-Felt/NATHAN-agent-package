@@ -71,7 +71,7 @@ metrics.total({
 
 The consumer loads its config however it likes and passes the object; **the package reads no file**: otherwise the `.` entry point would drag `fs` behind it (`ADR-AGENT-0002`). The package does the arithmetic and the aggregation.
 
-The join key is `LLMProvider.model`, already present in the original diagram.
+The join key is the model, read from the call. It was `LLMProvider.model`, a field the original diagram already carried, until `ADR-AGENT-0017` took it off the port: the model now travels per call, and `withMetrics` reads it there. The call is the more accurate source anyway, since it records the model actually used.
 
 ### Three rules
 

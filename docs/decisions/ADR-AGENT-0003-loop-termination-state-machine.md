@@ -68,4 +68,4 @@ export type AgentResult = {
 
 **To watch**
 
-A model that does not support native tool calls would signal its end differently. `LLMProvider.supportsTools()` exists to detect this case; the associated handling is not in V1.
+A model that does not support native tool calls would signal its end differently. `ModelInfo.supportsTools` exists to detect this case; the associated handling is not in V1. The flag used to be a `supportsTools()` method on the port, until `ADR-AGENT-0017` moved it onto the model, which is where it varies.
