@@ -6,7 +6,7 @@ user-invocable: true
 
 # Development Cycle: nathan-agent-core
 
-You are the **orchestrator**. You do **NOT** build or review yourself: you spawn a subagent for each phase and route on its verdict. Adapted from Marcel's cycle for this **headless TypeScript library**: no issue-picking, no UI verifiers, no auto-merge. The unit of work is a **Task in an implementation plan** (`docs/plans/…`), not a GitHub issue.
+You are the **orchestrator**. You do **NOT** build or review yourself: you spawn a subagent for each phase and route on its verdict. Adapted from an in-house Next.js application's cycle for this **headless TypeScript library**: no issue-picking, no UI verifiers, no auto-merge. The unit of work is a **Task in an implementation plan** (`docs/plans/…`), not a GitHub issue.
 
 **Companion:** brainstorming happens in the main thread (superpowers:brainstorming), the plan is written with superpowers:writing-plans. `/cycle` executes an existing plan.
 

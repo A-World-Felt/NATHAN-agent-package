@@ -30,16 +30,16 @@ Project context: NATHAN Console v2.0, an AI voice-assisted accessible programmin
 ## What this package is not
 
 - **Not a wrapper around an existing SDK.** The engine is written here.
-- **Not an extraction of another repo's `src/llm/`.** Marcel's contract (`C:\Marcel`) is `generate(prompt, context, config) → { content }`: no tool calls, no streaming, and its `UsageContext` is coupled to its tiered billing.
+- **Not an extraction of another repo's `src/llm/`.** An in-house Next.js application's contract is `generate(prompt, context, config) → { content }`: no tool calls, no streaming, and its `UsageContext` is coupled to its tiered billing.
 
 ### On the neighboring repos
 
-`C:\Marcel` and `C:\Meastro` are **neither references nor authorities**. The team does not know them, and neither one is the consumer of this package.
+Two private repos were consulted early on and are **neither references nor authorities**. The team does not know them, and neither one is the consumer of this package.
 
-- **Marcel**: a private Next.js app, never published, with no agentic loop and no tool calls. It exposes no public API, so it can say nothing about API design.
-- **Meastro**: a C# backend, analyzed for its **counter-examples** of tool execution (`ADR-AGENT-0004`).
+- **An in-house Next.js application**: private, never published, with no agentic loop and no tool calls. It exposes no public API, so it can say nothing about API design.
+- **An in-house C# backend**: analyzed for its **counter-examples** of tool execution (`ADR-AGENT-0004`).
 
-What is retained from them amounts to two dated observations, cited as evidence and not as conventions: Marcel's `feature: string` field that drifted in production, and Meastro's permission pitfalls.
+What is retained from them amounts to two dated observations, cited as evidence and not as conventions: that application's `feature: string` field that drifted in production, and that backend's permission pitfalls.
 
 **The real consumer is NATHAN's accessible IDE, built in `PMC/`.** It is the one that arbitrates.
 
@@ -176,7 +176,7 @@ const result = await agent.run("amène-moi aux réglages");
 
 `defineAgent()` is a pure function that returns a typed object. Agents are exported `const`s, imported statically. **No lookup by name, no untyped `string` key.**
 
-The failure mode to avoid, observed in production in `C:\Marcel` (`src/llm/models/index.ts:62`):
+The failure mode to avoid, observed in production in that application:
 
 ```ts
 feature: string;  // 'generation' | 'replace' | 'chat' | 'coverage-check' | etc.
@@ -192,7 +192,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 - Files in `kebab-case.ts`, named after their main export (`ollama-llm-provider.ts` holds `OllamaLLMProvider`).
 - **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `FakeLLMProvider`). The structural type system makes the `I` marker unnecessary.
   - **The rule holds in the documentation and the diagrams too.** A name written in a doc must be findable in the code: an ADR that says `ITokenCounter` sends a reader grepping for a symbol that does not exist, and they conclude the doc has drifted. On the diagrams the marker is already there: a port box carries the UML stereotype `<< interface >>` above its name, so the `I` would only duplicate it.
-  - **One exception**: external code cited as evidence keeps the convention of its own language. Meastro's C# (`IBlockDiscoveryService`, `IContainerRuntime`) is quoted verbatim in `ADR-AGENT-0004` and `ADR-AGENT-0010` and is never renamed.
+  - External code quoted as evidence keeps the convention of its own language.
 - A barrel `index.ts` per layer; consumers import from the barrel, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. Valuable for a package: an export removed by mistake breaks a test, not a consumer.
 - **Readability is a primary criterion, not an afterthought.** This is an open-source package maintained by contributors of varying levels. A good engineer takes a complex task and makes it simple: they do not compress it into one clever line. Prefer a named function or an intermediate variable over a dense expression, and the clear standard-library form over the terse idiom (`Object.hasOwn(m, k)` over `Object.prototype.hasOwnProperty.call(m, k)`; a named `makeOllama` factory over an inline arrow in the record). No sophisticated generics for a one-off case. When clarity and brevity conflict, clarity wins.
@@ -203,7 +203,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 
 ## Packaging conventions
 
-Taken from `NATHAN-jira-package` (`@a-world-felt/nathan-jira-core`), the only in-house precedent. Marcel cannot serve here: it is `private: true` and is never published.
+Taken from an in-house package already published to the same registry, the only in-house precedent. That Next.js application cannot serve here: it is `private: true` and is never published.
 
 | Decision | Value |
 |---|---|
@@ -214,13 +214,13 @@ Taken from `NATHAN-jira-package` (`@a-world-felt/nathan-jira-core`), the only in
 | Tests | `node:test`: zero dependencies |
 | Config | `.env.example`; `dotenv` as a **devDependency only** |
 
-**Three deviations from jira**, accepted:
+**Three deviations from that package**, accepted:
 
 1. Its `exports` map has only one branch. Three are needed here (see above).
-2. Jira does `import 'dotenv/config'` at the top of `src/config.ts`. For a **published library**, that is an import-time side effect: reading a `.env` in the consumer's current directory and injecting into its `process.env` is not a library's job. **The application loads its `.env`, the library reads `process.env`.**
-3. Jira stayed on vitest 1.x. Here `node:test` is enough and removes the dependency.
+2. That package does `import 'dotenv/config'` at the top of its config file. For a **published library**, that is an import-time side effect: reading a `.env` in the consumer's current directory and injecting into its `process.env` is not a library's job. **The application loads its `.env`, the library reads `process.env`.**
+3. That package stayed on vitest 1.x. Here `node:test` is enough and removes the dependency.
 
-> ESM + `NodeNext` pitfall: relative imports carry the **emitted** file's extension, so `.js` even from a `.ts`: `import type { Message } from "./models/index.js"`. Precedent: `NATHAN-jira-package/src/config.ts:2`.
+> ESM + `NodeNext` pitfall: relative imports carry the **emitted** file's extension, so `.js` even from a `.ts`: `import type { Message } from "./models/index.js"`. Precedent: that same in-house package does this in its own source.
 
 ## Testing conventions
 
