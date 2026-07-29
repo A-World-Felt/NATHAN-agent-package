@@ -139,14 +139,14 @@ The *why* is in the ADRs (`docs/decisions/`), in particular `ADR-AGENT-0001`, `-
 
 Two versionings not to be confused.
 
-**The package** is on **SemVer** (`version` in `package.json`). Bump protocol:
+**The package** is on **SemVer** (`version` in `package.json`) and published to the organization's **GitHub Packages registry**. Publication is **tag-driven**: pushing a `v*` tag triggers `.github/workflows/publish.yml`, which builds and runs `npm publish`. Release protocol:
 
 1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.1.0`, then `0.1.0` → `0.2.0`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
 2. Update **Current version** in `README.md`.
 3. Commit: `chore: bump vX.Y.Z (JIRAID)`.
-4. Tag: `git tag vX.Y.Z`, then `git push origin <branch> --tags`.
-5. Consumers repoint their git dependency: `…NATHAN-agent-package#vX.Y.Z`.
+4. Tag and push the tag: `git tag vX.Y.Z`, then `git push origin main --tags`.
+5. CI (`publish.yml`) detects the `v*` tag, builds, and publishes to the registry. Consumers repoint their SemVer range (`^X.Y.Z`).
 
-Consumption happens **by git tag** (`github:A-World-Felt/NATHAN-agent-package#vX.Y.Z`), with no registry or npm token. Publication to the **GitHub Packages registry** (the `publish.yml` workflow triggered on `v*` tags) is **not yet in place**: it is a separate batch (DEV-204); this section will gain the registry flow when it lands.
+**Merging into `main` publishes nothing**: only pushing a `v*` tag triggers publication. By convention, the bump and the tag happen on `main` (a release is cut from `main` after merging). `publish.yml` must therefore be present on `main`.
 
 **Agents**, on the other hand, are **not** versioned by a field: an agent is a committed TypeScript file, the version is git, and "this version is good" is what the tests/evals prove. No `version` field, no runtime registry. See `ROADMAP.md` and `ADR-AGENT-0005`. Versioning a prompt is only worthwhile if the harness can **measure** that v2 beats v1.
