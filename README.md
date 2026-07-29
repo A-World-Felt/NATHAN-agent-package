@@ -23,13 +23,13 @@ The package is published to the organization's **GitHub Packages registry** unde
 ```
 
 ```bash
-npm i @a-world-felt/nathan-agent-core@^0.1.0-alpha
+npm i @a-world-felt/nathan-agent-core@^0.2.0-alpha
 ```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "^0.1.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.2.0-alpha"
   }
 }
 ```
@@ -93,21 +93,22 @@ Under NodeNext, your own relative imports also carry the `.js` extension, even f
 
 Four subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
-| Subpath | Contents | State in `0.1.0-alpha` |
+| Subpath | Contents | State in `0.2.0-alpha` |
 |---|---|---|
-| `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models) |
+| `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models, LLM layer, context layer) |
 | `./llm` | LLM layer: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry + `resolveProvider`, and the LLM models | **available** |
 | `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
 | `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.1.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
+> In `0.2.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
 
 ### What `.` exports
 
-`.` re-exports the full `./llm` engine barrel plus `ToolResult`. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives the same surface standalone). It exposes:
+`.` re-exports the full `./llm` engine barrel, the context layer, and `ToolResult`. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives that layer standalone, without the context one). It exposes:
 
 - **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
 - **Engine**: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry and `resolveProvider`, and the `LLMError` class.
+- **Context**: the `ContextStrategy` and `TokenCounter` ports, `SlidingWindowStrategy` (the V1 baseline: keep the newest history that fits, pin the system message, never split a tool call from its result) and `HeuristicTokenCounter` (characters divided by four, approximate by design, `ADR-AGENT-0008`). There is no `./context` subpath: the layer has no standalone consumer yet (`ADR-AGENT-0012`).
 
 No disk access reaches `.`, so it stays importable everywhere (`ADR-AGENT-0002`).
 
