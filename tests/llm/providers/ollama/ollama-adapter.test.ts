@@ -243,6 +243,25 @@ test("a declared model the server does not hold yields the pull command to run",
   );
 });
 
+test("a 404 that did not come from the API is an API_ERROR, not a missing model", async () => {
+  // A baseURL that never reaches Ollama answers 404 as well. What separates the two is the shape
+  // of the body, not its wording: the API writes JSON carrying `error`, a fronting server writes
+  // whatever it likes. Answering that with `ollama pull` would send a reader after a model that
+  // was never the problem.
+  const notTheApi = (async () =>
+    new Response("<html>404 not found</html>", { status: 404 })) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ models: DECLARED, fetch: notTheApi });
+
+  await assert.rejects(
+    () => p.complete([{ role: "user", content: "hi" }], { model: MODEL }),
+    (e: unknown) => {
+      assert.equal((e as { code: string }).code, "API_ERROR");
+      assert.doesNotMatch((e as Error).message, /ollama pull/);
+      return true;
+    },
+  );
+});
+
 test("role:'tool' message forwards only role and content, dropping toolCallId", async () => {
   let sentMessages: unknown;
   const capturingFetch = (async (_url: string, init: { body: string }) => {

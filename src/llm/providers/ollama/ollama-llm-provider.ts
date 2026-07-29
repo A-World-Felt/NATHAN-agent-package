@@ -119,12 +119,20 @@ export class OllamaLLMProvider implements LLMProvider {
     }
     if (!res.ok) {
       const body = await res.text();
-      // A declared model the server does not hold: the 404 is turned into the command that fixes it.
-      // The server's own body is kept, since a 404 on a wrong baseURL lands here too and only it says so.
+      // A 404 has two unrelated causes: a model the server does not hold, and a baseURL that never
+      // reaches Ollama. Reporting both as MODEL_NOT_FOUND would break the promise LLMErrorCode makes,
+      // that the code tells cases apart without reading the message, and would answer a wrong URL
+      // with an `ollama pull` that fixes nothing.
       if (res.status === 404) {
+        if (isApiErrorBody(body)) {
+          throw new LLMError(
+            "MODEL_NOT_FOUND",
+            `Ollama on ${this.baseURL} has no model '${opts.model}'. Install it with: ollama pull ${opts.model}. Server said: ${body}`,
+          );
+        }
         throw new LLMError(
-          "MODEL_NOT_FOUND",
-          `Ollama on ${this.baseURL} has no model '${opts.model}'. Install it with: ollama pull ${opts.model}. Server said: ${body}`,
+          "API_ERROR",
+          `Ollama 404 from ${this.baseURL} did not come from the API. Check the base URL. Server said: ${body}`,
         );
       }
       throw new LLMError("API_ERROR", `Ollama ${res.status}: ${body}`);
@@ -142,6 +150,23 @@ export class OllamaLLMProvider implements LLMProvider {
       `Model '${model}' is not declared on this provider. Declared: ${offered}`,
     );
   }
+}
+
+/**
+ * Whether a failing response came from the API itself, which answers its errors as JSON carrying
+ * `error`. A request that never reached the API comes back as whatever the fronting server writes,
+ * which is not that shape. The split is not airtight, a proxy may answer JSON too, so both branches
+ * keep the server's own body and let the reader settle it.
+ */
+function isApiErrorBody(body: string): boolean {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return false;
+  }
+  if (typeof parsed !== "object" || parsed === null) return false;
+  return typeof (parsed as { error?: unknown }).error === "string";
 }
 
 function toRequestMessage(m: Message): OllamaRequestMessage {

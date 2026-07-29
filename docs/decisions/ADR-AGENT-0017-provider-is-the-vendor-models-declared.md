@@ -120,6 +120,8 @@ What it buys, beyond simplicity: no N+1 over `/api/show`, no asynchronous capabi
 
 **Refusing an undeclared model is a property of the port, not an adapter's habit.** Every implementation owes it, `FakeLLMProvider` included, or a consumer could not rely on it: a guard one provider honours and another ignores is not a contract. The shipped fake declares exactly one model, fixed in code and beyond the reach of configuration, because its script is a list consumed by a cursor and never indexed by the model. A fake declaring several would answer all of them identically and misrepresent itself.
 
+**Not every 404 is a missing model.** A `baseURL` that never reaches Ollama answers 404 too, and mapping both to `MODEL_NOT_FOUND` would break what `LLMErrorCode` promises, that a code tells cases apart without reading the message, then answer a wrong URL with an `ollama pull` that repairs nothing. The adapter separates them by the body's shape rather than its wording: the API writes its errors as JSON carrying `error`. The split is not airtight, since a proxy may answer JSON as well, so both branches keep the server's own body.
+
 **Verification is deferred to a script, not built into the port.** Comparing a declared list against what `/api/tags` really holds is a tool the consumer runs on purpose, not a cost the loop pays on every wiring. `listOllamaModels()` lands with that script, not here.
 
 ### What this supersedes in ADR-AGENT-0013
