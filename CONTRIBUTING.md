@@ -70,7 +70,7 @@ The scope is optional when the change is cross-cutting: `chore: update dependenc
 - **Never `amend`** an existing commit.
 - **No `Co-Authored-By` line.**
 - Concise message, 1 to 2 lines. The body is reserved for the *why*, when it is not obvious.
-- **No emoji.** The kitchen emojis from `C:\Marcel` are specific to that project and have no place here.
+- **No emoji.** The kitchen emojis from an in-house Next.js application are specific to that project and have no place here.
 
 ---
 
@@ -120,7 +120,7 @@ This is the same scheme as the rest of the project (`PMC/CONTEXT-AGENT.md` §10.
 ### 5.1 Files
 
 - **Strict TypeScript**: no `any` without a comment that justifies it.
-- Files in **`kebab-case.ts`**, named after their main export. **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`, `ContextStrategy` in `context-strategy.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `SlidingWindowStrategy`). The rule holds in the docs and the diagrams too, so that a name written anywhere is findable in the code; on a diagram the UML stereotype `<< interface >>` already marks a port. External code cited as evidence is the one exception: Meastro's C# keeps its own convention.
+- Files in **`kebab-case.ts`**, named after their main export. **No `I` prefix on interfaces** (TS-native, not C#): a port is a plain noun (`LLMProvider` in `llm-provider.ts`, `ContextStrategy` in `context-strategy.ts`), and implementations carry descriptive names (`OllamaLLMProvider`, `SlidingWindowStrategy`). The rule holds in the docs and the diagrams too, so that a name written anywhere is findable in the code; on a diagram the UML stereotype `<< interface >>` already marks a port. External code quoted as evidence keeps the convention of its own language.
 - **One `index.ts` barrel per layer.** Consumers (internal and external alike) import **from the barrel**, never from an individual file.
 - **Barrel contract tests** (`barrel-contract.test.ts`): they lock the public API. An export removed by mistake breaks a test, not a consumer.
 - `models/`: types only, no runtime dependency, no SDK import.
