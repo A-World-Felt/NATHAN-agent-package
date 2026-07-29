@@ -6,7 +6,7 @@
 - **Scope**: `@a-world-felt/nathan-agent-core`
 - **Complemented by**: [ADR-AGENT-0009](ADR-AGENT-0009-classes-for-public-api.md): classes for the public API, pure functions inside.
 
-> **Revision note (2026-07-21).** The rationale for this ADR was rewritten the same day it was written, before any commit and before any line of code. The initial version justified the decision as "reusing Marcel's convention", a citation that was both inaccurate and pointless: the team does not know Marcel, it is not the package's consumer, and the decision follows from the domain. The **decision is unchanged**; only its rationale is corrected.
+> **Revision note (2026-07-21).** The rationale for this ADR was rewritten the same day it was written, before any commit and before any line of code. The initial version justified the decision as "reusing an in-house Next.js application's convention", a citation that was both inaccurate and pointless: the team does not know that application, it is not the package's consumer, and the decision follows from the domain. The **decision is unchanged**; only its rationale is corrected.
 
 ## Context
 
@@ -30,7 +30,7 @@ This is not a style preference: **it is the very definition of ports and adapter
 ## Options considered
 
 **A: Flat, `src/*.ts`.**
-In-house precedent: `NATHAN-jira-package`. Suited to an HTTP client with no variants. Here, six contracts and some fifteen implementations would end up mixed in a single folder, and the port/adapter boundary (the heart of the package's promise) would become invisible.
+In-house precedent: an in-house package already published to the same registry. Suited to an HTTP client with no variants. Here, six contracts and some fifteen implementations would end up mixed in a single folder, and the port/adapter boundary (the heart of the package's promise) would become invisible.
 
 **B: Hexagonal, internal layers per domain.**
 Makes the boundary explicit in the file tree. Cost: sparsely populated folders at the start.
@@ -87,11 +87,11 @@ When **several providers serve a single contract**, they are nested per provider
 
 ## On external references
 
-`C:\Marcel` and `C:\Meastro` are **examples of the same pattern**, useful for seeing what it looks like in practice and for spotting its pitfalls. They are not the origin of this decision, and they have authority over nothing:
+Two private repos are **examples of the same pattern**, useful for seeing what it looks like in practice and for spotting its pitfalls. They are not the origin of this decision, and they have authority over nothing:
 
-- Marcel is a private Next.js application, never published, with no agentic loop and no tool calls, and **it is not this package's consumer**. It exposes no public API, so it can say nothing about API design (see `ADR-AGENT-0009`, where this confusion was corrected).
-- Meastro is a C# backend whose tool-execution model was analyzed for its **counter-examples** (`ADR-AGENT-0004`).
+- An in-house Next.js application, private, never published, with no agentic loop and no tool calls, and **it is not this package's consumer**. It exposes no public API, so it can say nothing about API design (see `ADR-AGENT-0009`, where this confusion was corrected).
+- An in-house C# backend whose tool-execution model was analyzed for its **counter-examples** (`ADR-AGENT-0004`).
 
 The real consumer is **NATHAN's accessible IDE**, built in `PMC/`. It, and it alone, will decide whether this structure holds up in practice.
 
-What remains retained from Marcel is a **dated observation**, not a convention: the `feature: string` field in `src/llm/models/index.ts:62`, whose real union lived in a comment and drifted within a few months in production code. Hence the rule: *if a key is a string, it must be typed.*
+What remains retained from that Next.js application is a **dated observation**, not a convention: the `feature: string` field, whose real union lived in a comment and drifted within a few months in production code. Hence the rule: *if a key is a string, it must be typed.*

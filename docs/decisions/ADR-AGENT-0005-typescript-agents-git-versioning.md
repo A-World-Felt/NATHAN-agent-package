@@ -15,8 +15,8 @@ Three questions to settle: **where the definitions live**, **in what format**, a
 
 ### What the analysis showed
 
-- **Marcel has no prompt versioning.** Exhaustive search: zero occurrences of `PROMPT_VERSION`, `promptVersion`, `promptRegistry`, `getPrompt`. No `prompt` table in the database, no migration. Prompts are literals interpolated in pure functions, one file per call site, versioned **by git only**. Their own notes treat a prompt change as "validate in a manual gate".
-- **Marcel attempted a named registry, and it drifted.** `src/llm/models/index.ts:62`:
+- **An in-house Next.js application has no prompt versioning.** Exhaustive search: zero occurrences of `PROMPT_VERSION`, `promptVersion`, `promptRegistry`, `getPrompt`. No `prompt` table in the database, no migration. Prompts are literals interpolated in pure functions, one file per call site, versioned **by git only**. Their own notes treat a prompt change as "validate in a manual gate".
+- **That application attempted a named registry, and it drifted.**
   ```ts
   feature: string;  // 'generation' | 'replace' | 'chat' | 'coverage-check' | etc.
   ```
@@ -24,7 +24,7 @@ Three questions to settle: **where the definitions live**, **in what format**, a
 
 ## Options considered
 
-**A: Runtime registry with lookup by name.** `registry.get("navigateur")`. Reproduces exactly the drift mode observed in Marcel if the keys are `string`.
+**A: Runtime registry with lookup by name.** `registry.get("navigateur")`. Reproduces exactly the drift mode observed in that application if the keys are `string`.
 
 **B: `defineAgent()` in TypeScript, agents exported as `const`, imported statically.** Free types, no validation code to write, legible git diff, no lookup by name.
 
@@ -63,7 +63,7 @@ This eliminates the two-diverging-counters problem: a per-agent `version` field 
 
 - Zero schema-validation code to write and maintain.
 - Autocompletion and typing work on the agent definitions.
-- Impossible to reproduce Marcel's `feature: string` drift: there is no text key.
+- Impossible to reproduce that application's `feature: string` drift: there is no text key.
 - Versioning is free and already tooled (git, blame, PR, revert).
 
 **Negative**
@@ -77,4 +77,4 @@ Versioning is only worthwhile if one can **measure** that a v2 of a prompt beats
 
 **General rule that follows, applicable everywhere in the package**
 
-> If a key is a string, it must be typed. The good precedent is `Marcel/src/llm/providers/index.ts:25`: `PROVIDERS: Record<ProviderID, () => LLMProvider>`, closed, typed, driven by an environment variable.
+> If a key is a string, it must be typed. The good precedent is that same application's `PROVIDERS: Record<ProviderID, () => LLMProvider>`, closed, typed, driven by an environment variable.

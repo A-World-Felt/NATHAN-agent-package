@@ -8,24 +8,24 @@
 
 ## Context
 
-`ADR-AGENT-0001` decided that use-cases would be partially applied functions, by carrying over Marcel's convention:
+`ADR-AGENT-0001` decided that use-cases would be partially applied functions, by carrying over an in-house Next.js application's convention:
 
 ```ts
 export const makeRunAgent = (deps) => async (input) => { … };
 ```
 
-That decision is revised. The original reasoning transposed a Marcel convention without checking that it applied.
+That decision is revised. The original reasoning transposed that application's convention without checking that it applied.
 
-**Marcel is an application, not a published library.** Its use-cases are internal, wired once in `src/app/composition/`, and their only consumer is Marcel itself. In that context, the partial-dependency function is the right tool: it makes the wiring explicit at the composition point.
+**It is an application, not a published library.** Its use-cases are internal, wired once at a single composition point, and their only consumer is itself. In that context, the partial-dependency function is the right tool: it makes the wiring explicit at the composition point.
 
-**A published package has a constraint Marcel does not: a public API surface**, consumed by third-party repos and by teammates who will not read the internal code.
+**A published package has a constraint it does not: a public API surface**, consumed by third-party repos and by teammates who will not read the internal code.
 
 Mental model stated by the team: *"apps import the package, declare an `AgenticLLM` or a `VoiceAgenticLLM` and use its functions."*
 
 ## Options evaluated
 
 **A: Partially applied functions** (`ADR-AGENT-0001`).
-Consistent with Marcel. But `makeRunAgent(deps)` returns an **opaque function**: nothing in it is discoverable, and `step()` has to be exported separately, which breaks the link between the two.
+Consistent with that application's convention. But `makeRunAgent(deps)` returns an **opaque function**: nothing in it is discoverable, and `step()` has to be exported separately, which breaks the link between the two.
 
 **B: Classes for everything, including dispatch and helpers.**
 Faithful to the original diagram. Brings stateless classes for pure functions, which `ADR-AGENT-0001` rightly rules out.
@@ -80,11 +80,11 @@ The rest of the `ADR-AGENT-0001` placement rule is unchanged.
 
 **Negative**
 
-- A deliberate divergence from Marcel on this precise point. It is justified by a difference in nature between the two projects (application versus library) and must be explained to anyone who knows Marcel.
+- A deliberate divergence from that application's convention on this precise point. It is justified by a difference in nature between the two projects (application versus library) and must be explained to anyone who knows it.
 - Two styles coexist in the package. The dividing line above must stay explicit in `CLAUDE.md`, otherwise it will blur.
 
 **Method lesson**
 
-A convention observed in another project must be **justified by the need here**, not transposed because it exists elsewhere. The neighboring repo cited (a private application, never published, which the team does not know and which is not the package's consumer) had authority over nothing. The right question was not "what does Marcel do?" but "what does a developer write when they install this package?".
+A convention observed in another project must be **justified by the need here**, not transposed because it exists elsewhere. The neighboring repo cited (a private application, never published, which the team does not know and which is not the package's consumer) had authority over nothing. The right question was not "what does that application do?" but "what does a developer write when they install this package?".
 
 See `ADR-AGENT-0001` § "On external references" for the general framing.

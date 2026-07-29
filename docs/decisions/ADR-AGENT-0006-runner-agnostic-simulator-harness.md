@@ -7,7 +7,7 @@
 
 ## Context
 
-The harness is **what justifies the package**. An agent loop is two hundred lines that anyone can rewrite; what is hard and genuinely reusable is being able to test something non-deterministic. It is also the only part with no in-house precedent: neither Marcel nor `NATHAN-jira-package` has an equivalent.
+The harness is **what justifies the package**. An agent loop is two hundred lines that anyone can rewrite; what is hard and genuinely reusable is being able to test something non-deterministic. It is also the only part with no in-house precedent: neither an in-house Next.js application nor an in-house package already published to the same registry has an equivalent.
 
 Stated need: *"put an agent in an app and check whether it can navigate inside it. Before putting it in the app, give it the tools: change pages, fetch the current position, click on the components. But instead of really putting it in the app, when it asks to fetch the page, it returns the list from the mock app that doesn't exist. When it changes page, it just changes a variable. The agent has no idea it's not really in the app."*
 
@@ -17,7 +17,7 @@ Then: *"a harness that swaps models and checks the same criteria, with a visuali
 
 The agent has **no access to the world** other than tool results. Controlling that boundary means controlling its entire reality. This is not a testing trick, it is a structural property.
 
-Meastro exploits exactly this (`_toolMapping`, `ToolDispatcherBlockExecutor.cs:62-73`): a substitution table redirects tool identifiers to capture blocks that record the intent and return realistic responses without touching the disk. Checked **after** permissions, and therefore unusable for escaping.
+An in-house C# backend exploits exactly this: a substitution table redirects tool identifiers to capture blocks that record the intent and return realistic responses without touching the disk. Checked **after** permissions, and therefore unusable for escaping.
 
 ## A distinction that changes the API: mock ≠ simulator
 
@@ -109,8 +109,8 @@ A web interface is envisaged later. It has no place in a library: `toJSON()` / `
 
 **No substitution table is necessary**
 
-Meastro needs a redirection table (`_toolMapping`) because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
+That backend needs a redirection table because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
 
 Here, `Tool` is an interface and tools are passed as objects: substitution happens **at construction**, simply by passing different objects. The abstraction is the interface itself. See `ADR-AGENT-0010`.
 
-This is also what avoids inheriting Meastro's pitfall: there, `_toolMapping` is a session variable propagated between sessions, so an agent able to write session variables could rewire its own tools.
+This is also what avoids inheriting that backend's pitfall: there, the redirection table is a session variable propagated between sessions, so an agent able to write session variables could rewire its own tools.
