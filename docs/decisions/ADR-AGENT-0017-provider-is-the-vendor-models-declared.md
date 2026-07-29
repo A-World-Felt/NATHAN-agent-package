@@ -118,6 +118,8 @@ What it buys, beyond simplicity: no N+1 over `/api/show`, no asynchronous capabi
 
 **Two distinct errors follow, both free.** Calling `complete()` with a model absent from the declared list raises `MODEL_NOT_FOUND` before any network call, listing what was declared. A model that is declared but not installed still gets Ollama's 404, whose message gains the `ollama pull` command to run. Different causes, different messages, no extra request.
 
+**Refusing an undeclared model is a property of the port, not an adapter's habit.** Every implementation owes it, `FakeLLMProvider` included, or a consumer could not rely on it: a guard one provider honours and another ignores is not a contract. The shipped fake declares exactly one model, fixed in code and beyond the reach of configuration, because its script is a list consumed by a cursor and never indexed by the model. A fake declaring several would answer all of them identically and misrepresent itself.
+
 **Verification is deferred to a script, not built into the port.** Comparing a declared list against what `/api/tags` really holds is a tool the consumer runs on purpose, not a cost the loop pays on every wiring. `listOllamaModels()` lands with that script, not here.
 
 ### What this supersedes in ADR-AGENT-0013

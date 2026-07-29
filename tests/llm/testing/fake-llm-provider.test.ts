@@ -6,7 +6,8 @@ import { FakeLLMProvider } from "../../../dist/testing/index.js";
 import type { LLMResponse } from "../../../dist/llm/models/index.js";
 
 const reply = (content: string): LLMResponse => ({ content, toolCalls: [], usage: undefined });
-const MODEL = "fake-model";
+// Read from the class, not retyped: if the constant moves, these tests move with it.
+const MODEL = FakeLLMProvider.MODEL_ID;
 
 test("returns scripted responses in order", async () => {
   const fake = new FakeLLMProvider({ responses: [reply("one"), reply("two")] });
@@ -26,25 +27,35 @@ test("records calls, including whether tools were passed", async () => {
   assert.equal(fake.calls[1].opts.tools, undefined);
 });
 
-test("records which model each call asked for", async () => {
-  const fake = new FakeLLMProvider({
-    models: [{ id: "small", supportsTools: true }, { id: "large", supportsTools: true }],
-    responses: [reply("x"), reply("y")],
-  });
-  await fake.complete([{ role: "user", content: "a" }], { model: "small" });
-  await fake.complete([{ role: "user", content: "b" }], { model: "large" });
-  assert.deepEqual(fake.calls.map((c) => c.opts.model), ["small", "large"]);
+test("refuses a model it does not answer for, without consuming the script", async () => {
+  const fake = new FakeLLMProvider({ responses: [reply("x")] });
+
+  await assert.rejects(
+    () => fake.complete([{ role: "user", content: "a" }], { model: "large" }),
+    (e: unknown) => {
+      assert.equal((e as { code: string }).code, "MODEL_NOT_FOUND");
+      return true;
+    },
+  );
+  assert.equal(fake.calls.length, 0, "a refused call never happened");
+  // The script is intact, so the refusal cannot be mistaken for an exhausted script later on.
+  assert.equal((await fake.complete([{ role: "user", content: "a" }], { model: MODEL })).content, "x");
 });
 
-test("declares no streaming, and one tool-capable model by default", () => {
+test("declares no streaming, and exactly one tool-capable model", () => {
   const fake = new FakeLLMProvider({ responses: [] });
   assert.equal(fake.supportsStreaming(), false);
   assert.deepEqual(fake.models(), [{ id: MODEL, supportsTools: true }]);
 });
 
-test("declares the models it was given", () => {
-  const models = [{ id: "a", supportsTools: false }, { id: "b", supportsTools: true }];
-  assert.deepEqual(new FakeLLMProvider({ models, responses: [] }).models(), models);
+test("supportsTools is configurable, the model id is not", () => {
+  const toolless = new FakeLLMProvider({ supportsTools: false, responses: [] });
+  assert.deepEqual(toolless.models(), [{ id: MODEL, supportsTools: false }]);
+
+  // A caller mutating the returned list must not reach the fake's own declaration.
+  const first = toolless.models();
+  first[0].id = "tampered";
+  assert.equal(toolless.models()[0].id, MODEL);
 });
 
 test("throws when the script is exhausted", async () => {

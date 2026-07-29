@@ -126,6 +126,22 @@ export async function checkProviderContract(
       : { ok: false, detail: `supportsStreaming() = ${seen(supportsStreaming)}` };
   });
 
+  // Refusing an undeclared model is a property of the port, not one adapter's habit
+  // (ADR-AGENT-0017): a guard one provider honours and another ignores is not a contract,
+  // so the shipped check is what makes it one.
+  await check("complete() refuses a model the provider does not declare", async () => {
+    // Longer than every declared id concatenated, so it cannot accidentally be one of them.
+    const undeclared = `${declaredModels.map((declared) => declared.id).join("-")}-undeclared`;
+    try {
+      await provider.complete([{ role: "user", content: prompt }], { model: undeclared });
+      return { ok: false, detail: `'${undeclared}' was accepted although it is not declared` };
+    } catch (err) {
+      const code = (err as { code?: unknown }).code;
+      if (code === "MODEL_NOT_FOUND") return true;
+      return { ok: false, detail: `expected MODEL_NOT_FOUND, got ${seen(code)}` };
+    }
+  });
+
   // Capture the completion once; the shape checks below read it. If complete() throws
   // (a propagating provider error), this check fails and `response` stays undefined,
   // so the shape checks fail gracefully instead of crashing.
