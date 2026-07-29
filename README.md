@@ -145,23 +145,36 @@ The `./llm` subpath ships the LLM layer: the `LLMProvider` port, the `OllamaLLMP
 ```ts
 import { OllamaLLMProvider, type Message } from "@a-world-felt/nathan-agent-core/llm";
 
-const provider = new OllamaLLMProvider({ model: "qwen2.5:0.5b" });
+// A provider is a vendor: it offers several models, and you name one per call.
+const provider = new OllamaLLMProvider({
+  models: [
+    { id: "qwen2.5:0.5b", supportsTools: true },
+    { id: "qwen2.5:7b", supportsTools: true, maxInputTokens: 32768 },
+  ],
+});
 
 const messages: Message[] = [{ role: "user", content: "Bonjour !" }];
 
 // One-shot completion → { content, toolCalls, usage? }.
-const res = await provider.complete(messages);
+const res = await provider.complete(messages, { model: "qwen2.5:0.5b" });
 console.log(res.content); // the assistant text
 console.log(res.usage);   // { tokensIn, tokensOut } | undefined
 
 // Streaming → yields { contentDelta, done, usage? }; the terminal chunk carries usage.
-for await (const chunk of provider.stream(messages)) {
+for await (const chunk of provider.stream(messages, { model: "qwen2.5:0.5b" })) {
   process.stdout.write(chunk.contentDelta);
   if (chunk.done) console.log("\n", chunk.usage);
 }
 ```
 
-`OllamaLLMProvider`'s constructor takes `{ model, baseURL?, supportsTools?, fetch? }`. `baseURL` defaults to `process.env.OLLAMA_HOST ?? "http://localhost:11434"`; `fetch` is injectable (the real global `fetch` in prod, a fake in tests). `complete(messages, tools?)` and `stream(messages, tools?)` optionally take a list of `ToolDefinition`s to present to the model.
+`OllamaLLMProvider`'s constructor takes `{ models, baseURL?, fetch? }`. `baseURL` defaults to `process.env.OLLAMA_HOST ?? "http://localhost:11434"`; `fetch` is injectable (the real global `fetch` in prod, a fake in tests). `complete` and `stream` take `{ model, tools? }`, where `tools` is the list of `ToolDefinition`s to present to the model on that call.
+
+**Models are declared, never discovered** (`ADR-AGENT-0017`). The package queries no catalogue and checks no hardware: it reports what you declared, and `provider.models()` returns it synchronously. Two consequences worth knowing:
+
+- Asking for a model you did not declare raises `LLMError("MODEL_NOT_FOUND")` **before any request**, listing what you did declare.
+- Asking for one you declared but never installed gets the same code from Ollama's 404, with the `ollama pull` command to run.
+
+Whether a model can call tools is declared per model, on `supportsTools`, because that is where it varies. Streaming is declared once per provider, by `supportsStreaming()`, because it is a property of the transport.
 
 ### The provider registry
 
@@ -171,13 +184,13 @@ For **env-driven** selection, the registry maps a typed provider id to a factory
 import { PROVIDERS, resolveProvider } from "@a-world-felt/nathan-agent-core/llm";
 
 // Direct, typed access to a known provider:
-const a = PROVIDERS.ollama(); // OllamaLLMProvider built from OLLAMA_MODEL
+const a = PROVIDERS.ollama(); // declares the single model named by OLLAMA_MODEL
 
 // From a runtime string (e.g. an env var); throws LLMError("UNKNOWN_PROVIDER") on an unknown id:
 const b = resolveProvider(process.env.LLM_PROVIDER ?? "ollama");
 ```
 
-`PROVIDERS.ollama()` builds the provider from `process.env.OLLAMA_MODEL` (falling back to `qwen2.5:0.5b`). The library reads `process.env`; the consuming application loads its `.env`.
+`PROVIDERS.ollama()` declares **one** model, `process.env.OLLAMA_MODEL ?? DEFAULT_OLLAMA_MODEL`, read at call time. It is the environment-driven shortcut; offering several models is the explicit path, `new OllamaLLMProvider({ models: [...] })`. The library reads `process.env`; the consuming application loads its `.env`.
 
 ### Verifying a provider
 
