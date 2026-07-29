@@ -57,7 +57,7 @@
         <mxCell id="ag2" value="AgenticLLM&#xa;&#xa;strictement le même objet, le même prompt, la même boucle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
           <mxGeometry x="390" y="110" width="390" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="contract" value="ITool  —  name · description · schema · execute(args)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="contract" value="Tool  —  name · description · schema · execute(args)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=17;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="120" y="250" width="930" height="55" as="geometry" />
         </mxCell>
         <mxCell id="contractn" value="l&#39;agent ne voit QUE ça" style="text;html=1;align=center;fontSize=13;fontColor=#555555;fontStyle=2" vertex="1" parent="1">
@@ -93,7 +93,7 @@
         <mxCell id="eq" value="IDENTIQUE&#xa;du point de vue&#xa;de l&#39;agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="500" y="480" width="170" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="nomap" value="AUCUN MAPPER, AUCUNE REDIRECTION.&#xa;La substitution se fait à la construction : on passe d&#39;autres objets ITool. L&#39;abstraction, c&#39;est l&#39;interface elle-même.&#xa;Une table de redirection à l&#39;exécution réimplémenterait l&#39;injection de dépendances — et rouvrirait la faille classique : un état ambiant capable de recâbler les outils." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=16;verticalAlign=middle;fontSize=15;" vertex="1" parent="1">
+        <mxCell id="nomap" value="AUCUN MAPPER, AUCUNE REDIRECTION.&#xa;La substitution se fait à la construction : on passe d&#39;autres objets Tool. L&#39;abstraction, c&#39;est l&#39;interface elle-même.&#xa;Une table de redirection à l&#39;exécution réimplémenterait l&#39;injection de dépendances — et rouvrirait la faille classique : un état ambiant capable de recâbler les outils." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=16;verticalAlign=middle;fontSize=15;" vertex="1" parent="1">
           <mxGeometry x="120" y="710" width="930" height="95" as="geometry" />
         </mxCell>
       </root>
@@ -113,10 +113,10 @@
         <mxCell id="l1" value="AgenticLLM" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="70" y="120" width="180" height="560" as="geometry" />
         </mxCell>
-        <mxCell id="l2" value="IContextProvider" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=14;" vertex="1" parent="1">
+        <mxCell id="l2" value="ContextStrategy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=14;" vertex="1" parent="1">
           <mxGeometry x="320" y="120" width="180" height="560" as="geometry" />
         </mxCell>
-        <mxCell id="l3" value="ILLMProvider" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=14;" vertex="1" parent="1">
+        <mxCell id="l3" value="LLMProvider" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=14;" vertex="1" parent="1">
           <mxGeometry x="570" y="120" width="180" height="560" as="geometry" />
         </mxCell>
         <mxCell id="l4" value="ToolDispatcher" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=14;" vertex="1" parent="1">
@@ -310,7 +310,7 @@
         <mxCell id="vag" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;fontColor=#666666;" value="VoiceAgenticLLM" vertex="1">
           <mxGeometry height="183" width="270" x="640" y="-1040" as="geometry" />
         </mxCell>
-        <mxCell id="vaga" parent="vag" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="- agent: AgenticLLM&#xa;- voice: IVoiceProvider" vertex="1">
+        <mxCell id="vaga" parent="vag" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="- agent: AgenticLLM&#xa;- voice: VoiceProvider" vertex="1">
           <mxGeometry height="45" width="270" y="40" as="geometry" />
         </mxCell>
         <mxCell id="vagb" parent="vag" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -322,7 +322,7 @@
         <mxCell id="ag" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="AgenticLLM" vertex="1">
           <mxGeometry height="248" width="270" x="640" y="-740" as="geometry" />
         </mxCell>
-        <mxCell id="aga" parent="ag" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- llm: ILLMProvider&#xa;- context: IContextProvider&#xa;- tools: ITool[]&#xa;- maxIterations: number" vertex="1">
+        <mxCell id="aga" parent="ag" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- llm: LLMProvider&#xa;- context: ContextStrategy&#xa;- tools: Tool[]&#xa;- maxIterations: number" vertex="1">
           <mxGeometry height="90" width="270" y="40" as="geometry" />
         </mxCell>
         <mxCell id="agb" parent="ag" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -334,7 +334,7 @@
         <mxCell id="td" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="ToolDispatcher" vertex="1">
           <mxGeometry height="178" width="270" x="960" y="-740" as="geometry" />
         </mxCell>
-        <mxCell id="tda" parent="td" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- tools: ITool[]&#xa;(exactement ceux qu&#39;on lui passe)" vertex="1">
+        <mxCell id="tda" parent="td" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- tools: Tool[]&#xa;(exactement ceux qu&#39;on lui passe)" vertex="1">
           <mxGeometry height="40" width="270" y="40" as="geometry" />
         </mxCell>
         <mxCell id="tdb" parent="td" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -355,7 +355,7 @@
         <mxCell id="hnc" parent="hn" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ defineScenario(s)&#xa;+ runScenario(s, deps): RunResult&#xa;+ runMatrix({scenarios, axes, runs})&#xa;+ report.toJSON() / toCSV()&#xa;&#xa;pilote l&#39;agent par step()" vertex="1">
           <mxGeometry height="110" width="270" y="98" as="geometry" />
         </mxCell>
-        <mxCell id="icp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;IContextProvider" vertex="1">
+        <mxCell id="icp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;ContextStrategy" vertex="1">
           <mxGeometry height="158" width="270" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="icpa" parent="icp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ maxTokens: number" vertex="1">
@@ -367,7 +367,7 @@
         <mxCell id="icpc" parent="icp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ build(history): Message[]&#xa;+ observe(exchange): void&#xa;&#xa;observe() : no-op en V1, réel en V3" vertex="1">
           <mxGeometry height="75" width="270" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="itc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;ITokenCounter" vertex="1">
+        <mxCell id="itc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;TokenCounter" vertex="1">
           <mxGeometry height="120" width="270" x="320" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="itcb" parent="itc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -376,7 +376,7 @@
         <mxCell id="itcc" parent="itc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ count(messages): number&#xa;&#xa;ajouté — ADR-0008" vertex="1">
           <mxGeometry height="62" width="270" y="58" as="geometry" />
         </mxCell>
-        <mxCell id="illm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;ILLMProvider" vertex="1">
+        <mxCell id="illm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;LLMProvider" vertex="1">
           <mxGeometry height="173" width="270" x="640" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="illma" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ model: string   ← clé des tarifs" vertex="1">
@@ -388,7 +388,7 @@
         <mxCell id="illmc" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ complete(messages, tools): LLMResponse&#xa;+ stream(messages): Iterator&#xa;+ supportsTools(): boolean&#xa;&#xa;LLMResponse { content, toolCalls, usage? }" vertex="1">
           <mxGeometry height="90" width="270" y="83" as="geometry" />
         </mxCell>
-        <mxCell id="itl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;ITool" vertex="1">
+        <mxCell id="itl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;Tool" vertex="1">
           <mxGeometry height="190" width="270" x="960" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="itla" parent="itl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ name: string&#xa;+ description: string&#xa;+ schema: ToolSchema   ← AJOUTÉ" vertex="1">
@@ -400,7 +400,7 @@
         <mxCell id="itlc" parent="itl" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ execute(args): ToolResult&#xa;&#xa;LE point de substitution (page 2)" vertex="1">
           <mxGeometry height="72" width="270" y="118" as="geometry" />
         </mxCell>
-        <mxCell id="ivp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;fontColor=#666666;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;IVoiceProvider" vertex="1">
+        <mxCell id="ivp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;fontColor=#666666;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;VoiceProvider" vertex="1">
           <mxGeometry height="108" width="270" x="1280" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="ivpb" parent="ivp" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -409,7 +409,7 @@
         <mxCell id="ivpc" parent="ivp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="+ transcribe(audio): string&#xa;+ synthesize(text): bytes" vertex="1">
           <mxGeometry height="50" width="270" y="58" as="geometry" />
         </mxCell>
-        <mxCell id="imc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;IMetricsCollector" vertex="1">
+        <mxCell id="imc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;MetricsCollector" vertex="1">
           <mxGeometry height="160" width="270" x="1600" y="-170" as="geometry" />
         </mxCell>
         <mxCell id="imcb" parent="imc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -418,22 +418,22 @@
         <mxCell id="imcc" parent="imc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ record(entry): void&#xa;+ total(opts?): MetricsTotal&#xa;&#xa;portée = durée de vie de l&#39;instance&#xa;PAS de start/stop — ADR-0007" vertex="1">
           <mxGeometry height="102" width="270" y="58" as="geometry" />
         </mxCell>
-        <mxCell id="swc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="SlidingWindowContext" vertex="1">
+        <mxCell id="swc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="SlidingWindowStrategy" vertex="1">
           <mxGeometry height="98" width="270" y="180" as="geometry" />
         </mxCell>
         <mxCell id="swcb" parent="swc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
           <mxGeometry height="8" width="270" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="swcc" parent="swc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="V1 — tronque via ITokenCounter&#xa;observe() : no-op" vertex="1">
+        <mxCell id="swcc" parent="swc" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="V1 — tronque via TokenCounter&#xa;observe() : no-op" vertex="1">
           <mxGeometry height="50" width="270" y="48" as="geometry" />
         </mxCell>
-        <mxCell id="mcp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;fontColor=#666666;" value="MemoryContextProvider" vertex="1">
+        <mxCell id="mcp" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;fontColor=#666666;" value="Memory (V3)" vertex="1">
           <mxGeometry height="88" width="270" y="300" as="geometry" />
         </mxCell>
         <mxCell id="mcpb" parent="mcp" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
           <mxGeometry height="8" width="270" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="mcpc" parent="mcp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="V3 — mémoire auto-alimentée&#xa;observe() devient réel" vertex="1">
+        <mxCell id="mcpc" parent="mcp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="context/ · framework · outils&#xa;non tranché, voir ADR-0016" vertex="1">
           <mxGeometry height="40" width="270" y="48" as="geometry" />
         </mxCell>
         <mxCell id="htc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="HeuristicTokenCounter" vertex="1">
@@ -535,7 +535,7 @@
         <mxCell id="avpc" parent="avp" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;fontColor=#666666;" value="V4" vertex="1">
           <mxGeometry height="20" width="270" y="88" as="geometry" />
         </mxCell>
-        <mxCell id="mc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="MetricsCollector" vertex="1">
+        <mxCell id="mc" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="InMemoryMetricsCollector" vertex="1">
           <mxGeometry height="98" width="270" x="1600" y="180" as="geometry" />
         </mxCell>
         <mxCell id="mcb" parent="mc" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -547,7 +547,7 @@
         <mxCell id="wm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffe6cc;strokeColor=#d79b00;" value="withMetrics (décorateur)" vertex="1">
           <mxGeometry height="113" width="270" x="1600" y="300" as="geometry" />
         </mxCell>
-        <mxCell id="wma" parent="wm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- inner: ILLMProvider&#xa;- collector: IMetricsCollector" vertex="1">
+        <mxCell id="wma" parent="wm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="- inner: LLMProvider&#xa;- collector: MetricsCollector" vertex="1">
           <mxGeometry height="40" width="270" y="40" as="geometry" />
         </mxCell>
         <mxCell id="wmb" parent="wm" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
@@ -574,7 +574,7 @@
         <mxCell id="simb" parent="sim" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
           <mxGeometry height="8" width="270" y="65" as="geometry" />
         </mxCell>
-        <mxCell id="simc" parent="sim" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="ses outils implémentent ITool&#xa;≠ mock : navigate() puis&#xa;getCurrentPage() sont cohérents" vertex="1">
+        <mxCell id="simc" parent="sim" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="ses outils implémentent Tool&#xa;≠ mock : navigate() puis&#xa;getCurrentPage() sont cohérents" vertex="1">
           <mxGeometry height="57" width="270" y="73" as="geometry" />
         </mxCell>
         <mxCell id="ellm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="ExternalLLMProvider" vertex="1">
@@ -612,14 +612,6 @@
         </mxCell>
         <mxCell id="r1" edge="1" parent="1" source="swc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;dashed=1;fontSize=13;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="icp" value="">
           <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="r2" edge="1" parent="1" source="mcp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;dashed=1;fontSize=13;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="icpc" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="-20" y="344" />
-              <mxPoint x="-20" y="-49" />
-            </Array>
-          </mxGeometry>
         </mxCell>
         <mxCell id="r3" edge="1" parent="1" source="htc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;dashed=1;fontSize=13;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="itc" value="">
           <mxGeometry relative="1" as="geometry" />
