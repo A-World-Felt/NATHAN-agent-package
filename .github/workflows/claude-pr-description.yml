@@ -22,7 +22,7 @@ jobs:
       - name: Detect issue ID from branch name
         id: issue
         run: |
-          # convention: type/JIRAID-nom-court (voir CONTRIBUTING.md section 1)
+          # convention: type/JIRAID-short-name (see CONTRIBUTING.md section 1)
           BRANCH="${{ github.head_ref }}"
           ISSUE_ID=$(echo "$BRANCH" | grep -oP '[A-Z]+-\d+' | head -1 || echo "")
           echo "id=$ISSUE_ID" >> "$GITHUB_OUTPUT"

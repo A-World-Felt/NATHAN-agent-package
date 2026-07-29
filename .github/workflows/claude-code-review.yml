@@ -33,100 +33,100 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Relis cette PR comme un développeur TypeScript expérimenté qui maintient une
-            **librairie publiée** — `@a-world-felt/nathan-agent-core`, la couche agentique LLM
-            de NATHAN (IDE accessible à assistance vocale pour personnes non-voyantes).
+            Review this PR as an experienced TypeScript developer maintaining a
+            **published library**: `@a-world-felt/nathan-agent-core`, the LLM agentic layer of
+            NATHAN (a voice-assisted, accessible IDE for blind users).
 
-            **Écris en français.** Concis. Ne signale que de vrais problèmes, jamais des
-            préférences de style. Si tu ne trouves rien, dis-le — n'invente pas.
+            **Write in English.** Be concise. Report real problems only, never style
+            preferences. If you find nothing, say so: do not invent findings.
 
-            La branche est déjà présente dans le répertoire courant. Lis `.claude/CLAUDE.md`
-            et `docs/decisions/` avant de juger un choix d'architecture : la plupart sont
-            déjà tranchés et justifiés.
+            The branch is already checked out in the working directory. Read `.claude/CLAUDE.md`
+            and `docs/decisions/` before judging an architectural choice: most of them are
+            already settled and justified there.
 
-            ## Invariants du package — leur violation est un vrai problème
+            ## Package invariants, where a violation is a real problem
 
-            **Frontières des points d'entrée** (`ADR-AGENT-0002`)
-            - le baril `.` ne doit JAMAIS importer `fs`, `path` ou quoi que ce soit de disque —
-              il doit rester importable partout
-            - rien de `src/testing/` ne doit être atteignable depuis `.` ou `./tools`
-            - un nouvel export dans un baril est un changement d'API publique
+            **Entry point boundaries** (`ADR-AGENT-0002`)
+            - the `.` barrel must NEVER import `fs`, `path` or anything touching disk:
+              it has to stay importable everywhere
+            - nothing under `src/**/testing/` may be reachable from `.` or `./tools`
+            - a new export in a barrel is a public API change
 
             **ESM + NodeNext**
-            - tout import relatif doit porter l'extension du fichier ÉMIS, donc `.js`
-              même depuis un `.ts` : `from "./models/index.js"`. Sans ça, ça compile
-              et ça casse à l'exécution.
+            - every relative import must carry the EMITTED file's extension, so `.js`
+              even from a `.ts`: `from "./models/index.js"`. Without it, the code compiles
+              and breaks at runtime.
 
-            **Règle de placement** (`ADR-AGENT-0001`)
-            - `models/` : types seulement, aucun import de SDK, aucune dépendance runtime
-            - `interfaces/` : ports en `kebab-case.ts`, contrats seulement. **Aucun préfixe `I`** :
-              un port est un nom simple (`LLMProvider` dans `llm-provider.ts`, `ContextStrategy`
-              dans `context-strategy.ts`). Signaler un `I*` ajouté, pas l'inverse.
-            - `services/` : fonctions PURES — ne doit jamais importer `interfaces/`
-            - `application/use-cases/` : orchestration uniquement
-            - `providers/<vendor>/` : implémentations qui diffèrent par FOURNISSEUR (`llm/providers/ollama/`)
-            - `strategies/<nom>/` : implémentations qui diffèrent par ALGORITHME (`context/strategies/sliding-window/`),
-              voir `ADR-AGENT-0016`. Le port porte le même mot que le dossier : `LLMProvider`, `ContextStrategy`.
-            - `infrastructure/` : les autres adaptateurs concrets à I/O réel
+            **Placement rule** (`ADR-AGENT-0001`)
+            - `models/`: types only, no SDK import, no runtime dependency
+            - `interfaces/`: ports in `kebab-case.ts`, contracts only. **No `I` prefix**:
+              a port is a plain noun (`LLMProvider` in `llm-provider.ts`, `ContextStrategy`
+              in `context-strategy.ts`). Flag an added `I*`, not the absence of one.
+            - `services/`: PURE functions, and they must never import `interfaces/`
+            - `application/use-cases/`: orchestration only
+            - `providers/<vendor>/`: implementations that differ by SUPPLIER (`llm/providers/ollama/`)
+            - `strategies/<name>/`: implementations that differ by ALGORITHM (`context/strategies/sliding-window/`),
+              see `ADR-AGENT-0016`. The port carries the same word as the folder: `LLMProvider`, `ContextStrategy`.
+            - `infrastructure/`: the remaining concrete adapters with real I/O
 
-            **Classes vs fonctions** (`ADR-AGENT-0009`)
-            - API publique avec état → classe (`AgenticLLM`, `VoiceAgenticLLM`)
-            - fonction pure d'orchestration ou de calcul → fonction (`step`, `dispatchTool`)
+            **Classes versus functions** (`ADR-AGENT-0009`)
+            - public API with state, use a class (`AgenticLLM`, `VoiceAgenticLLM`)
+            - pure orchestration or computation, use a function (`step`, `dispatchTool`)
 
-            **Gestion des erreurs**
-            - un outil qui échoue renvoie un `ToolResult` porteur de l'erreur — il ne LÈVE PAS.
-              Une exception qui traverse la boucle rend l'agent fragile.
-            - les erreurs de provider remontent : `LLMError` avec code.
-            - sortie forcée = atterrissage, jamais coupure sèche (`ADR-AGENT-0011`) :
-              budget ou répétition → on rappelle le modèle SANS outils pour qu'il rédige.
+            **Error handling**
+            - a failing tool returns a `ToolResult` carrying the error, it does NOT throw.
+              An exception crossing the loop makes the agent fragile.
+            - provider errors propagate: `LLMError` with a code.
+            - a forced exit is a landing, never a hard cut (`ADR-AGENT-0011`): on budget or
+              repetition, call the model back WITHOUT tools so that it writes an answer.
 
-            **Typage**
-            - pas de `any` sans commentaire qui le justifie
-            - **si une clé est une chaîne, elle doit être typée.** Une union qui ne vit que
-              dans un commentaire dérive en quelques mois — c'est un mode de panne observé
-              en production, documenté dans `ADR-AGENT-0005`.
+            **Typing**
+            - no `any` without a comment justifying it
+            - **if a key is a string, it must be typed.** A union that lives only in a comment
+              drifts within months: that is a failure mode observed in production, recorded in
+              `ADR-AGENT-0005`.
 
-            **Version publiée** (`CONTRIBUTING.md` §5.3)
-            - une PR qui touche l'API publique (nouveau port, nouvel export dans un baril,
-              nouveau point d'entrée) doit **monter la version** dans `package.json`, et la
-              même valeur doit apparaître dans la ligne « Current version » du `README.md`.
-              Les deux désaccordés est un vrai problème : c'est ce numéro qui sera publié.
-            - la version doit être **strictement supérieure** à celle de `main`. Compare avec
-              `git show origin/main:package.json`. Tant qu'on est en `0.x`, un ajout compatible
-              est un bump *minor*.
-            - une PR purement doc, test ou interne ne bump pas : signaler un bump injustifié
-              autant qu'un bump manquant.
+            **Published version** (`CONTRIBUTING.md` section 5.3)
+            - a PR touching the public API (new port, new barrel export, new entry point) must
+              **raise the version** in `package.json`, and the same value must appear in the
+              "Current version" line of `README.md`. The two disagreeing is a real problem:
+              that number is what gets published on merge.
+            - the version must be **strictly above** the one on `main`. Compare with
+              `git show origin/main:package.json`. While in `0.x`, a backwards-compatible
+              addition is a *minor* bump.
+            - a documentation, test or internals-only PR does not bump: flag an unjustified
+              bump as readily as a missing one.
 
-            **Sûreté**
-            - jamais de clé d'API en dur — variables d'environnement uniquement
-            - jamais de `.env` commité
-            - une librairie ne lit PAS de fichier de config : l'application charge son `.env`,
-              la librairie lit `process.env`
+            **Safety**
+            - never a hard-coded API key: environment variables only
+            - never a committed `.env`
+            - a library does NOT read a config file: the application loads its `.env`,
+              the library reads `process.env`
 
-            ## Autres angles
+            ## Other angles
 
-            - rupture de contrat d'un port `I*.ts` déjà publié → casse tous les implémenteurs,
-              y compris les repos consommateurs
-            - `barrel-contract.test.ts` non mis à jour alors que l'API publique change
-            - code mort, références périmées, TODO laissés
-            - conformité au critère de fin de la PR (`docs/plans/2026-07-21-v1-decoupage-pr.md`)
-            - un test qui affirme sur du texte généré plutôt que sur le comportement
-              (`toolCalls`, `stopReason`, état du simulateur) — c'est instable par nature
+            - breaking the contract of an already published port breaks every implementer,
+              consumer repositories included
+            - `barrel-contract.test.ts` left unchanged while the public API changes
+            - dead code, stale references, leftover TODOs
+            - compliance with the PR completion criterion (`docs/plans/2026-07-21-v1-decoupage-pr.md`)
+            - a test asserting on generated text rather than on behaviour (`toolCalls`,
+              `stopReason`, simulator state), which is unstable by nature
 
-            ## Ce qui n'est PAS un problème
+            ## What is NOT a problem
 
-            - `observe()` et `stream()` présents mais inutilisés : voulu, ils évitent de casser
-              une interface publiée en V3/V4
-            - absence de couche de permissions : décision assumée (`ADR-AGENT-0004`)
-            - absence de table de substitution d'outils : décision assumée (`ADR-AGENT-0010`)
-            - `HeuristicTokenCounter` approximatif : décision assumée (`ADR-AGENT-0008`)
+            - `observe()` and `stream()` present but unused: deliberate, they avoid breaking a
+              published interface in V3/V4
+            - no permission layer: an accepted decision (`ADR-AGENT-0004`)
+            - no tool substitution table: an accepted decision (`ADR-AGENT-0010`)
+            - `HeuristicTokenCounter` being approximate: an accepted decision (`ADR-AGENT-0008`)
 
-            ## Sortie
+            ## Output
 
-            Utilise `gh pr comment` pour le retour général.
-            Utilise `mcp__github_inline_comment__create_inline_comment` (avec `confirmed: true`)
-            pour pointer une ligne précise.
-            Ne publie QUE des commentaires GitHub — ne rends pas le texte de revue en message.
+            Use `gh pr comment` for the general feedback.
+            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`)
+            to point at a precise line.
+            Publish GitHub comments ONLY: do not return the review text as a message.
 
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

@@ -200,6 +200,7 @@ The real union lives in the comment. Result: the list drifted within a few month
 - Comment non-obvious logic (prompts, transformations).
 - For an optional collection, prefer an explicit early return over folding the guard into the expression: `if (xs === undefined) return [];` then map, rather than `(xs ?? []).map(...)`. Easier to read and to maintain.
 - **No PR references in code comments** (nor in a plan's code blocks): a PR number is a transient label that rots once merged. Describe what the code does, not which PR added it.
+- **CI files are written in English**, prompts and comments included (`.github/workflows/`). They run on a shared surface and their output lands on GitHub, where the rest of the repository is already English. Replies in this chat stay French; the deliverables do not.
 
 ## Packaging conventions
 
