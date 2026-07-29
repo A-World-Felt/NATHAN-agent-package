@@ -139,14 +139,20 @@ The *why* is in the ADRs (`docs/decisions/`), in particular `ADR-AGENT-0001`, `-
 
 Two versionings not to be confused.
 
-**The package** is on **SemVer** (`version` in `package.json`) and published to the organization's **GitHub Packages registry**. Publication is **tag-driven**: pushing a `v*` tag triggers `.github/workflows/publish.yml`, which builds and runs `npm publish`. Release protocol:
+**The package** is on **SemVer** (`version` in `package.json`) and published to the organization's **GitHub Packages registry**. Publication is **driven by the version field**, and the whole release fits in the PR: the only thing you do by hand is bump the number.
 
-1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.1.0`, then `0.1.0` → `0.2.0`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
+1. Change `version` in `package.json` (e.g. `0.1.0-alpha` → `0.2.0-alpha`). Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
 2. Update **Current version** in `README.md`.
-3. Commit: `chore: bump vX.Y.Z (JIRAID)`.
-4. Tag and push the tag: `git tag vX.Y.Z`, then `git push origin main --tags`.
-5. CI (`publish.yml`) detects the `v*` tag, builds, and publishes to the registry. Consumers repoint their SemVer range (`^X.Y.Z`).
+3. Commit: `chore: bump vX.Y.Z (JIRAID)`, **on the feature branch, inside the PR**. The reviewer therefore sees the version being shipped, in the diff, before it ships.
+4. Merge. `.github/workflows/publish.yml` fires on `push: main`, reads the version, and stops there if a `vX.Y.Z` tag already exists. Otherwise it builds, runs the tests, publishes, and **then** tags the merge commit.
+5. Consumers repoint their SemVer range (`^X.Y.Z`).
 
-**Merging into `main` publishes nothing**: only pushing a `v*` tag triggers publication. By convention, the bump and the tag happen on `main` (a release is cut from `main` after merging). `publish.yml` must therefore be present on `main`.
+**Nobody creates a tag by hand.** The tag is a consequence of the publication, not its trigger, and it is what tells you later which commit a published version was built from: exactly what you need to cut a fix on top of a shipped release.
+
+**A merge that bumps nothing publishes nothing.** The tag lookup is the guard: same version as last time means the tag exists, and the workflow exits. So documentation or refactoring PRs merge without producing a release, and a PR that changes the public API publishes one, per the bump rule above.
+
+**The tag is written after `npm publish`, never before.** A tag placed first would claim a version that never reached the registry, and the guard would then skip the retry forever. If publication fails, no tag is written, and the next merge tries again.
+
+**Never tag a feature branch.** PRs land here with *Rebase and merge*, which replays the commits under new hashes, so a tag placed on a branch designates a lineage `main` never receives. This is also why the workflow tags from `main` and not from the PR.
 
 **Agents**, on the other hand, are **not** versioned by a field: an agent is a committed TypeScript file, the version is git, and "this version is good" is what the tests/evals prove. No `version` field, no runtime registry. See `ROADMAP.md` and `ADR-AGENT-0005`. Versioning a prompt is only worthwhile if the harness can **measure** that v2 beats v1.
