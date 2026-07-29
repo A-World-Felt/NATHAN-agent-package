@@ -57,10 +57,15 @@ jobs:
 
             **Règle de placement** (`ADR-AGENT-0001`)
             - `models/` : types seulement, aucun import de SDK, aucune dépendance runtime
-            - `interfaces/` : ports `I*.ts`, contrats seulement
+            - `interfaces/` : ports en `kebab-case.ts`, contrats seulement. **Aucun préfixe `I`** :
+              un port est un nom simple (`LLMProvider` dans `llm-provider.ts`, `ContextStrategy`
+              dans `context-strategy.ts`). Signaler un `I*` ajouté, pas l'inverse.
             - `services/` : fonctions PURES — ne doit jamais importer `interfaces/`
             - `application/use-cases/` : orchestration uniquement
-            - `providers/<vendor>/` et `infrastructure/` : I/O réel
+            - `providers/<vendor>/` : implémentations qui diffèrent par FOURNISSEUR (`llm/providers/ollama/`)
+            - `strategies/<nom>/` : implémentations qui diffèrent par ALGORITHME (`context/strategies/sliding-window/`),
+              voir `ADR-AGENT-0016`. Le port porte le même mot que le dossier : `LLMProvider`, `ContextStrategy`.
+            - `infrastructure/` : les autres adaptateurs concrets à I/O réel
 
             **Classes vs fonctions** (`ADR-AGENT-0009`)
             - API publique avec état → classe (`AgenticLLM`, `VoiceAgenticLLM`)
@@ -78,6 +83,17 @@ jobs:
             - **si une clé est une chaîne, elle doit être typée.** Une union qui ne vit que
               dans un commentaire dérive en quelques mois — c'est un mode de panne observé
               en production, documenté dans `ADR-AGENT-0005`.
+
+            **Version publiée** (`CONTRIBUTING.md` §5.3)
+            - une PR qui touche l'API publique (nouveau port, nouvel export dans un baril,
+              nouveau point d'entrée) doit **monter la version** dans `package.json`, et la
+              même valeur doit apparaître dans la ligne « Current version » du `README.md`.
+              Les deux désaccordés est un vrai problème : c'est ce numéro qui sera publié.
+            - la version doit être **strictement supérieure** à celle de `main`. Compare avec
+              `git show origin/main:package.json`. Tant qu'on est en `0.x`, un ajout compatible
+              est un bump *minor*.
+            - une PR purement doc, test ou interne ne bump pas : signaler un bump injustifié
+              autant qu'un bump manquant.
 
             **Sûreté**
             - jamais de clé d'API en dur — variables d'environnement uniquement
