@@ -35,8 +35,26 @@ npm i @a-world-felt/nathan-agent-core@^0.1.0-alpha
 ```
 
 The registry **requires authentication**, even for reads (the package is private):
-- **Locally**: a GitHub PAT with the `read:packages` scope, exported as `NODE_AUTH_TOKEN` (never committed).
-- **In GitHub Actions**: `actions/setup-node` with `registry-url: https://npm.pkg.github.com` generates the `.npmrc`, and the built-in `GITHUB_TOKEN` is enough.
+
+- **Locally**: a GitHub PAT exported as `NODE_AUTH_TOKEN` (never committed). A classic PAT needs `read:packages` **and `repo`**: the package lives in a private repository, and without `repo` the registry answers 404 rather than 401, which reads like a misspelled package name. A fine-grained token needs read access to that repository's packages.
+- **In GitHub Actions**: `actions/setup-node` writes the `.npmrc`, but that alone is not enough. The consuming job must also grant `packages: read` and hand the token to the install step:
+
+```yaml
+permissions:
+  contents: read
+  packages: read
+steps:
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+      registry-url: 'https://npm.pkg.github.com'
+      scope: '@a-world-felt'
+  - run: npm ci
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The built-in `GITHUB_TOKEN` only reaches packages of its own organization. A consumer outside `A-World-Felt` uses a PAT, as above.
 
 You pin a SemVer range (`^X.Y.Z`); publishing a new version is described in the versioning convention in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
