@@ -17,7 +17,7 @@ The intuition came from Meastro, which has exactly this mechanism: `_toolMapping
 
 **At Meastro, a tool is a manifest on disk resolved by identifier at runtime** (`*.tool.block.json`, discovered by `IBlockDiscoveryService`, resolved via `registry.Get(blockType)`). There is no way to inject another implementation: the dispatcher fetches the tool by its name. The only way to substitute is therefore **a redirection table in the middle**.
 
-**For us, `ITool` is an interface and tools are passed as objects.** Substitution is already possible, and it happens at construction:
+**For us, `Tool` is an interface and tools are passed as objects.** Substitution is already possible, and it happens at construction:
 
 ```ts
 new AgenticLLM({ tools: [navigate, click] })   // production
@@ -58,4 +58,4 @@ No table, no redirection, no lookup by name. The harness builds an `AgenticLLM` 
 
 **What stays true of the original idea**
 
-The goal (*the agent does not know which implementation hides behind a tool*) is fully achieved. It is the `ITool` contract that guarantees it, not a redirection mechanism. See page 2 of the `docs/schema/Architecture-agent-core.drawio` diagram, which makes it its visual demonstration.
+The goal (*the agent does not know which implementation hides behind a tool*) is fully achieved. It is the `Tool` contract that guarantees it, not a redirection mechanism. See page 2 of the `docs/schema/Architecture-agent-core.drawio` diagram, which makes it its visual demonstration.
