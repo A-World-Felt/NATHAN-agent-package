@@ -44,7 +44,7 @@ For each step of the task:
 - **`core` imports nothing upward; there is no `llm ↔ tools` edge** (ADR-0012). `ToolSchema` lives in `core`, `ToolResult` in `tools`, `ToolDefinition`/`ToolCall` in `llm`.
 - Relative imports carry the **`.js`** extension (NodeNext).
 
-**ADR compliance.** Check the task against its ADRs explicitly, e.g. ADR-0013: `supportsTools()`/`supportsStreaming()` are **required** methods, `stream?` optional; `usage` filled now; `LLMChunk` matches the real endpoint. A commit that quietly deviates from an ADR is `request_changes` (important). If the **plan itself** contradicts an ADR, flag `spec_defect` so the orchestrator fixes the plan, not the builder.
+**ADR compliance.** Check the task against its ADRs explicitly, e.g. ADR-0017: a provider is a **vendor**, so it carries `readonly id` and `models()`, the model travels per call in `CompletionOptions`, and tool support is declared per model on `ModelInfo` while `supportsStreaming()` stays on the provider; `stream?` optional; `usage` filled now; `LLMChunk` matches the real endpoint. A commit that quietly deviates from an ADR is `request_changes` (important). If the **plan itself** contradicts an ADR, flag `spec_defect` so the orchestrator fixes the plan, not the builder.
 
 **Goal-vs-mechanism.** The task makes a promise (e.g. "usage arrives in the terminal `done` chunk"). Verify the mechanism delivers it on the real data: the fixtures are the captured endpoint output, so check the mapping against them, not against a guess.
 
