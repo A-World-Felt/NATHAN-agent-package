@@ -204,6 +204,30 @@ test("complete() rejects an undeclared model before sending anything", async () 
   assert.equal(requested, false, "an undeclared model must not reach the network");
 });
 
+test("stream() rejects an undeclared model too, on its first iteration", async () => {
+  let requested = false;
+  const spyFetch = (async () => {
+    requested = true;
+    return new Response("", { status: 200 });
+  }) as unknown as typeof fetch;
+  const p = new OllamaLLMProvider({ models: DECLARED, fetch: spyFetch });
+
+  // The guard sits in the private post(), which an async generator body only reaches once
+  // iterated. Calling stream() therefore cannot throw: the first next() is what does.
+  const stream = p.stream!([{ role: "user", content: "hi" }], { model: "llama3.2:3b" });
+  const iterator = stream[Symbol.asyncIterator]();
+
+  await assert.rejects(
+    () => iterator.next(),
+    (e: unknown) => {
+      assert.equal((e as { code: string }).code, "MODEL_NOT_FOUND");
+      assert.match((e as Error).message, /qwen2\.5:0\.5b/);
+      return true;
+    },
+  );
+  assert.equal(requested, false, "an undeclared model must not reach the network");
+});
+
 test("a declared model the server does not hold yields the pull command to run", async () => {
   const notInstalled = (async () =>
     new Response('{"error":"model \'qwen2.5:0.5b\' not found"}', { status: 404 })) as unknown as typeof fetch;

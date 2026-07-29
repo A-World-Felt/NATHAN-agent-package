@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import * as root from "@a-world-felt/nathan-agent-core";
 import * as llm from "@a-world-felt/nathan-agent-core/llm";
 import * as testing from "@a-world-felt/nathan-agent-core/testing";
+import type { CompletionOptions, LLMProvider, ModelInfo } from "@a-world-felt/nathan-agent-core";
 
 test("`.` exposes the engine surface", () => {
   for (const name of ["LLMError", "OllamaLLMProvider", "PROVIDERS", "resolveProvider", "DEFAULT_OLLAMA_MODEL"]) {
@@ -34,6 +35,26 @@ test("`.` exposes the context layer", () => {
   for (const name of ["SlidingWindowStrategy", "HeuristicTokenCounter"]) {
     assert.equal(typeof surface[name], "function", `missing ${name}`);
   }
+});
+
+// The tests above probe value symbols, which is all a runtime check can reach. A type that left
+// the barrel would slip through: `node --test` strips types without checking them. The lock for
+// those is an annotation, and the gate that enforces it is `npm run typecheck`, not `npm test`.
+test("`.` exposes the port and the types its calls need", () => {
+  const declared: ModelInfo = { id: "probe-model", supportsTools: true };
+  const opts: CompletionOptions = { model: declared.id };
+
+  // A structural stand-in for an implementer: annotating it is what pins LLMProvider itself,
+  // and it fails to compile if the port's shape drifts from what a consumer must satisfy.
+  const provider: LLMProvider = {
+    id: "probe",
+    supportsStreaming: () => false,
+    models: () => [declared],
+    complete: async () => ({ content: "", toolCalls: [] }),
+  };
+
+  assert.equal(provider.models()[0]?.id, opts.model);
+  assert.equal(provider.supportsStreaming(), false);
 });
 
 test("`./llm` does not carry the context layer", () => {
