@@ -1,9 +1,16 @@
 name: Publish to GitHub Packages
 
 # Publication is driven by the version field, not by a hand-pushed tag.
-# A merge into main whose package.json carries a version that was never published
-# builds, publishes, and only then tags the merge commit. A merge that bumped
-# nothing falls through and does nothing.
+#
+# The guard is the RELEASE TAG, not the registry: a merge into main whose version
+# has no vX.Y.Z tag builds, publishes, and only then tags the merge commit. A merge
+# that bumped nothing finds the tag and does nothing.
+#
+# The tag is written last on purpose. If publishing fails, no tag is written and the
+# next merge retries. The one window this leaves: publish succeeds and the tag push
+# fails, after which a retry would hit npm's refusal to overwrite an existing version.
+# Recovery is to push that tag by hand, `git tag vX.Y.Z <commit> && git push origin vX.Y.Z`
+# on the commit the run published, which is the only time a tag is created manually.
 on:
   push:
     branches:
@@ -21,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Read the version and check whether it is already published
+      - name: Read the version and look for its release tag
         id: version
         run: |
           # npm reads the field itself: no node -e, so no CommonJS versus ESM question
