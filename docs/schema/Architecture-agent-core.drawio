@@ -134,7 +134,7 @@
             <mxPoint x="160" y="265" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="m3" value="2. complete(messages, schémas d&#39;outils)" style="html=1;verticalAlign=bottom;endArrow=block;fontSize=13;" edge="1" parent="1">
+        <mxCell id="m3" value="2. complete(messages, { model, schémas d&#39;outils })" style="html=1;verticalAlign=bottom;endArrow=block;fontSize=13;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="160" y="330" as="sourcePoint" />
             <mxPoint x="660" y="330" as="targetPoint" />
@@ -204,7 +204,7 @@
         <mxCell id="fx2" value="1. injecter&#xa;&#xa;&quot;budget atteint,&#xa;conclus avec ce&#xa;que tu as&quot;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;align=left;spacingLeft=12;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="430" y="885" width="180" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="fx3" value="2. complete(messages)&#xa;SANS OUTILS&#xa;&#xa;c&#39;est CE point qui garantit&#xa;l&#39;atterrissage : le modèle&#xa;ne PEUT plus rien appeler,&#xa;donc il rédige" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=12;verticalAlign=middle;fontSize=13;fontStyle=1" vertex="1" parent="1">
+        <mxCell id="fx3" value="2. complete(messages, { model })&#xa;SANS OUTILS&#xa;&#xa;c&#39;est CE point qui garantit&#xa;l&#39;atterrissage : le modèle&#xa;ne PEUT plus rien appeler,&#xa;donc il rédige" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=12;verticalAlign=middle;fontSize=13;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="645" y="885" width="200" height="140" as="geometry" />
         </mxCell>
         <mxCell id="fx4" value="3. AgentResult&#xa;&#xa;stopReason:&#xa;&quot;budget&quot;&#xa;ou &quot;stuck&quot;&#xa;&#xa;→ une réponse rédigée,&#xa;jamais un résultat tronqué" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=12;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
@@ -377,16 +377,16 @@
           <mxGeometry height="62" width="270" y="58" as="geometry" />
         </mxCell>
         <mxCell id="illm" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;LLMProvider" vertex="1">
-          <mxGeometry height="173" width="270" x="640" y="-170" as="geometry" />
+          <mxGeometry height="245" width="270" x="640" y="-170" as="geometry" />
         </mxCell>
-        <mxCell id="illma" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ model: string   ← clé des tarifs" vertex="1">
+        <mxCell id="illma" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ id: string   ← le fournisseur" vertex="1">
           <mxGeometry height="25" width="270" y="50" as="geometry" />
         </mxCell>
         <mxCell id="illmb" parent="illm" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;rotatable=0;points=[];strokeColor=inherit;fontSize=13;" value="" vertex="1">
           <mxGeometry height="8" width="270" y="75" as="geometry" />
         </mxCell>
-        <mxCell id="illmc" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ complete(messages, tools): LLMResponse&#xa;+ stream(messages): Iterator&#xa;+ supportsTools(): boolean&#xa;&#xa;LLMResponse { content, toolCalls, usage? }" vertex="1">
-          <mxGeometry height="90" width="270" y="83" as="geometry" />
+        <mxCell id="illmc" parent="illm" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;html=1;fontSize=13;" value="+ models(): ModelInfo[]&#xa;+ supportsStreaming(): boolean&#xa;+ complete(messages, opts): LLMResponse&#xa;+ stream?(messages, opts): Iterator&#xa;&#xa;opts { model, tools? }   ← clé des tarifs&#xa;LLMResponse { content, toolCalls, usage? }&#xa;ModelInfo { id, supportsTools, maxInputTokens? }" vertex="1">
+          <mxGeometry height="162" width="270" y="83" as="geometry" />
         </mxCell>
         <mxCell id="itl" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontSize=13;" value="&lt;div&gt;&amp;lt;&amp;lt; interface &amp;gt;&amp;gt;&lt;/div&gt;Tool" vertex="1">
           <mxGeometry height="190" width="270" x="960" y="-170" as="geometry" />
