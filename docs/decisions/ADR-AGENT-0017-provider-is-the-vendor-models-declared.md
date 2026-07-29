@@ -135,7 +135,7 @@ Everything else in 0013 stands, including its central thesis that a capability m
 ### What it amends elsewhere
 
 - **`ADR-AGENT-0007`**, one sentence: "the join key is `LLMProvider.model`". The field no longer exists on the port, so `withMetrics` reads the model from the call. It is the more accurate source anyway, since it records the model actually used. The rest of 0007 stands: its per-instance scope is the collector's, not the provider's, and `withMetrics` is still unwritten.
-- **`ADR-AGENT-0015`**, one signature: `checkProviderContract` needs a model to exercise the port. Its thesis, targeting the port rather than the registry and returning a report rather than throwing, does not move.
+- **`ADR-AGENT-0015`**, its set of checked invariants. The signature itself does not move: 0015 already wrote it `checkProviderContract(provider, opts?)`, and `opts` merely gains a `model` to exercise. What changes is what gets checked, since the required capabilities 0015 named are no longer the port's: the vendor `id` and the declared models replace them. Its thesis, targeting the port rather than the registry and returning a report rather than throwing, does not move.
 
 ### The constraint this places on the agent
 
@@ -168,7 +168,7 @@ PR4 owns the association, and it must respect two rules.
 
 **Relations**
 
-- Partially supersedes `ADR-AGENT-0013`; amends one sentence of `ADR-AGENT-0007` and one signature of `ADR-AGENT-0015`.
+- Partially supersedes `ADR-AGENT-0013`; amends one sentence of `ADR-AGENT-0007` and the checked invariant set of `ADR-AGENT-0015`. All three are marked in the amended files themselves, not only in the registry: a declared amendment that is never applied leaves a reader following the registry on a contradiction.
 - Keeps `ToolDefinition` where `ADR-AGENT-0012` placed it, and keeps the per-call `tools` variation `ADR-AGENT-0011` depends on.
 - Binds PR4 to `ADR-AGENT-0005`: the agent-to-model association is typed TypeScript, never a string lookup.
 

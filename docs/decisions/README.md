@@ -28,7 +28,7 @@ Scope of this series: the `@a-world-felt/nathan-agent-core` package only.
 | [ADR-AGENT-0012](ADR-AGENT-0012-framework-independence-core-kernel-subpaths.md) | Framework independence: neutral `core` kernel, per-framework subpaths | ✅ Accepted | 2026-07-22 |
 | [ADR-AGENT-0013](ADR-AGENT-0013-llm-port-capabilities-optional-streaming.md) | The LLM port: required capabilities, optional streaming | ✅ Accepted, partially superseded by 0017 | 2026-07-22 |
 | [ADR-AGENT-0014](ADR-AGENT-0014-configurable-termination-strategy.md) | Termination strategy as a configurable, empirically-decided axis | ✅ Accepted, complements 0003 and 0011 | 2026-07-22 |
-| [ADR-AGENT-0015](ADR-AGENT-0015-shipped-provider-contract-test.md) | The package ships a provider contract test | ✅ Accepted, signature amended by 0017 | 2026-07-24 |
+| [ADR-AGENT-0015](ADR-AGENT-0015-shipped-provider-contract-test.md) | The package ships a provider contract test | ✅ Accepted, checked invariant set amended by 0017 | 2026-07-24 |
 | [ADR-AGENT-0016](ADR-AGENT-0016-context-strategies-behind-one-port.md) | Context strategies are implementations of one port | ✅ Accepted | 2026-07-27 |
 | [ADR-AGENT-0017](ADR-AGENT-0017-provider-is-the-vendor-models-declared.md) | The provider is the vendor, the model travels per call, models are declared | ✅ Accepted, partially supersedes 0013 | 2026-07-29 |
 

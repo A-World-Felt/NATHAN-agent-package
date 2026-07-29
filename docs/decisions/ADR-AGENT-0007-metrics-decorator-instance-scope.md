@@ -1,6 +1,6 @@
 # ADR-AGENT-0007: Metrics via a decorator, per-instance scope
 
-- **Status**: ✅ Accepted
+- **Status**: ✅ Accepted, join key amended by ADR-AGENT-0017
 - **Date**: 2026-07-21
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
