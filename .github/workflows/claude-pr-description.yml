@@ -52,6 +52,12 @@ jobs:
             ## How to test
             - 2 to 4 bullets max. Each bullet: where to go + what to do + what to verify.
             - Focus on the key scenarios a reviewer must validate (happy path + one edge case if relevant).
+            - **If the diff touches `package.json`'s `version`**, add a bullet asking the reviewer to
+              confirm the bump: the same value in `package.json` and in the README's "Current version"
+              line, and strictly above `main`'s. That number is what gets published on merge, so it is
+              the one thing a reviewer cannot fix after the fact.
+            - **If the diff changes the public API and does NOT touch `version`**, say so here: a new
+              port, a new barrel export or a new entry point requires a bump (`CONTRIBUTING.md` §5.3).
             - Omit this section only for pure config/chore/docs changes with nothing to manually test.
 
             ## Architecture
