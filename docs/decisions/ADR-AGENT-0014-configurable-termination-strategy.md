@@ -32,7 +32,7 @@ There is an honest cost to name: the explicit strategy re-sends the `finish` too
 
 **B: A configurable, typed strategy, default native.** A closed union on the agent definition; the non-default value registers a `finish` tool. This reopens `ADR-AGENT-0003` Option C, with a new argument.
 
-**C: A pluggable `ITerminationPolicy` port.** The most general. Rejected: the axis has exactly **two** values; a port with multiple implementations is the generic-framework overhead that the permanent "no overhead" constraint has already ruled out elsewhere (the permissions framework, the runtime registry).
+**C: A pluggable `TerminationPolicy` port.** The most general. Rejected: the axis has exactly **two** values; a port with multiple implementations is the generic-framework overhead that the permanent "no overhead" constraint has already ruled out elsewhere (the permissions framework, the runtime registry).
 
 ## Decision
 

@@ -48,7 +48,7 @@ Maximum separation. Three versions to keep in sync, three publications, for a si
 - `./tools`: the generic tools provided. Opt-in.
 - `./testing`: simulator, fake provider, scenarios.
 
-`ITool` and dispatch stay in `.`: everyone needs them. Only the concrete tool **implementations** move to `./tools`.
+`Tool` and dispatch stay in `.`: everyone needs them. Only the concrete tool **implementations** move to `./tools`.
 
 An agent receives exactly the tools it is handed. **Nothing implicit.**
 

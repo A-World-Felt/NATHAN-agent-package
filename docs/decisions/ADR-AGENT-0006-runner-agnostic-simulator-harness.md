@@ -111,6 +111,6 @@ A web interface is envisaged later. It has no place in a library: `toJSON()` / `
 
 Meastro needs a redirection table (`_toolMapping`) because its tools are on-disk manifests resolved by identifier at runtime: there is no other way to inject a different implementation.
 
-Here, `ITool` is an interface and tools are passed as objects: substitution happens **at construction**, simply by passing different objects. The abstraction is the interface itself. See `ADR-AGENT-0010`.
+Here, `Tool` is an interface and tools are passed as objects: substitution happens **at construction**, simply by passing different objects. The abstraction is the interface itself. See `ADR-AGENT-0010`.
 
 This is also what avoids inheriting Meastro's pitfall: there, `_toolMapping` is a session variable propagated between sessions, so an agent able to write session variables could rewire its own tools.

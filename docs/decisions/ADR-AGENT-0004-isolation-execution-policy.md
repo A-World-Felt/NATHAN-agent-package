@@ -37,7 +37,7 @@ Meastro demonstrates the cost of the confusion by negative example: a vocabulary
 
 ## Options considered
 
-**A: Two sibling implementations of an `IToolExecutor`.**
+**A: Two sibling implementations of a `ToolExecutor`.**
 The initial reading of Meastro. Prevents composition; reproduces the vocabulary ambiguity.
 
 **B: A decorator chain for policy, an exclusive choice for execution.**

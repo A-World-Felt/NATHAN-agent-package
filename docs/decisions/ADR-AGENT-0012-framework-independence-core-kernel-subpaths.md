@@ -43,7 +43,7 @@ Each framework owns what it **produces**:
 | `Message`, `Usage`, `LLMResponse`, `LLMChunk`, `LLMError` | **llm** | the conversation protocol |
 | `ToolResult` | **tools** | the tool *produces* it |
 
-The **agent is the composition root**. It maps `ITool → ToolDefinition` to call `complete`, and dispatches `ToolCall → execute → ToolResult → Message`. `tools` and `llm` never import each other; the agent, which legitimately depends on both, does the wiring at runtime.
+The **agent is the composition root**. It maps `Tool → ToolDefinition` to call `complete`, and dispatches `ToolCall → execute → ToolResult → Message`. `tools` and `llm` never import each other; the agent, which legitimately depends on both, does the wiring at runtime.
 
 ### The `./llm` subpath
 

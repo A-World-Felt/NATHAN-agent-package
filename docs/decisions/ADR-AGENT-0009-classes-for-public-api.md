@@ -45,7 +45,7 @@ export class AgenticLLM {
 }
 
 export class VoiceAgenticLLM {
-  constructor(deps: { agent: AgenticLLM; voice: IVoiceProvider });
+  constructor(deps: { agent: AgenticLLM; voice: VoiceProvider });
   run(input: string | AudioBuffer): Promise<AgentResult>;
 }
 ```
@@ -66,7 +66,7 @@ The rest of the `ADR-AGENT-0001` placement rule is unchanged.
 
 - **Discoverability.** `agent.` triggers autocompletion of the entire API. A returned function exposes nothing.
 - **The object genuinely has state and multiple operations**: shared configuration, `run()`, `step()`. That is the usage definition of a class.
-- **Composition reads well.** `new VoiceAgenticLLM({ agent, voice })` directly expresses what the diagram draws (`VoiceAgenticLLM` composes `AgenticLLM` and `IVoiceProvider`).
+- **Composition reads well.** `new VoiceAgenticLLM({ agent, voice })` directly expresses what the diagram draws (`VoiceAgenticLLM` composes `AgenticLLM` and `VoiceProvider`).
 - **Testability is not an argument**: a class with dependencies injected in the constructor tests exactly like a function with dependencies as parameters. That was the analysis error in `ADR-AGENT-0001`.
 - **The team's vocabulary is preserved.** `AgenticLLM` and `VoiceAgenticLLM` are the names established in the architecture diagram and in the team's discussions. Renaming them to `run-agent` would have cut the code off from the documentation and the conversations.
 
