@@ -144,12 +144,14 @@ Two versionings not to be confused.
 **Every PR that changes the public API bumps the version**, in the PR itself. While the package is in `0.x`, an addition to the public surface is a **minor** bump: a PR that ships a new port, a new entry point or a new exported class goes `0.1.0-alpha` to `0.2.0-alpha`. A PR that only touches documentation, tests or internals changes nothing.
 
 1. Change `version` in `package.json`. Prereleases carry a suffix: `-alpha`, `-beta`, `-rc.1`.
-2. Update **Current version** in `README.md`. The two must agree: the review workflow checks it.
+2. Update **Current version** in `README.md`. The two must agree: a reviewer checks it, and a consumer reading a stale README installs a version that does not exist.
 3. Commit: `chore: bump vX.Y.Z (JIRAID)`, **on the feature branch, inside the PR**. The reviewer therefore sees the version being shipped, in the diff, before it ships.
 4. Merge. `.github/workflows/publish.yml` fires on `push: main`, reads the version, and stops there if a `vX.Y.Z` tag already exists. Otherwise it builds, publishes, and **then** tags the merge commit.
 5. Consumers repoint their SemVer range (`^X.Y.Z`).
 
 **Nobody creates a tag by hand.** The tag is a consequence of the publication, not its trigger, and it is what tells you later which commit a published version was built from: exactly what you need to cut a fix on top of a shipped release.
+
+**One exception, and only one.** If a run publishes successfully but then fails to push its tag, the version exists in the registry with nothing pointing at it, and every later run would try to republish it and be refused. Repair that by tagging by hand the commit the run published. Never tag to *start* a release: that is what the bump is for.
 
 **A merge that bumps nothing publishes nothing.** The tag lookup is the guard: same version as last time means the tag exists, and the workflow exits. So documentation or refactoring PRs merge without producing a release, and a PR that changes the public API publishes one, per the bump rule above.
 
