@@ -213,3 +213,4 @@ Versioning and evaluation are the same feature seen from two angles: versioning 
 | Real tokenizer per model family | when calibration shows drift beyond margin |
 | Tool rendering in prompt (models without native calls) | when a targeted model is declared with `supportsTools: false` |
 | Web interface for reports | in the IDE repo, never in the package |
+| Declared-model verification against the server (`ADR-AGENT-0017`) | when a deployment actually runs a local server. The showcase prototype calls hosted providers, where a declared model cannot be missing from a local install, so the gap does not arise. Until then the first call reports it, with the `ollama pull` command to run |

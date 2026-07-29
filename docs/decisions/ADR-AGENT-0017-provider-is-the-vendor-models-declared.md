@@ -163,7 +163,7 @@ PR4 owns the association, and it must respect two rules.
 **Negative**
 
 - PR2 is reopened: the port, both implementations, the conformance check and the registry, plus their tests. No external consumer is owed a migration, but the work is real and it is the last cheap moment to do it.
-- A declared list can be wrong. A model declared but absent from the server fails at the first call, not at wiring. The verification script is what closes that gap, and it does not exist yet.
+- A declared list can be wrong. A model declared but absent from the server fails at the first call, not at wiring. The verification script is what closes that gap, and it does not exist yet. **Deferred with no date, deliberately** (`ROADMAP.md`): the showcase prototype calls hosted providers rather than a local server, so a declared model cannot be missing from an install nobody runs. The day a deployment does run locally, the check belongs to the application's boot, called on purpose and awaited once, never to the constructor: a provider that probed the network on construction would make `models()` asynchronous and would fail wiring on a cold server.
 - The package still answers "what was declared here", never "what can this machine hold". That question stays with the IDE.
 
 **Relations**
