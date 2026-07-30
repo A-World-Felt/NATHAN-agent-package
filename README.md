@@ -1,6 +1,6 @@
 # @a-world-felt/nathan-agent-core
 
-> **Current version: 0.3.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.4.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
 
 A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
@@ -23,13 +23,13 @@ The package is published to the organization's **GitHub Packages registry** unde
 ```
 
 ```bash
-npm i @a-world-felt/nathan-agent-core@^0.3.0-alpha
+npm i @a-world-felt/nathan-agent-core@^0.4.0-alpha
 ```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "^0.3.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.4.0-alpha"
   }
 }
 ```
@@ -93,22 +93,24 @@ Under NodeNext, your own relative imports also carry the `.js` extension, even f
 
 Four subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
-| Subpath | Contents | State in `0.3.0-alpha` |
+| Subpath | Contents | State in `0.4.0-alpha` |
 |---|---|---|
-| `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models, LLM layer, context layer) |
+| `.` | engine, ports, types, **the agentic loop** (**no disk access**, importable anywhere) | **available** (contract models, LLM layer, context layer, tools port, agent layer) |
 | `./llm` | LLM layer: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry + `resolveProvider`, and the LLM models | **available** |
-| `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
+| `./tools` | generic file tools (coupled to `fs`, opt-in) | **empty**: it resolves, and exports nothing yet |
 | `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.3.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
+> `./tools` is declared in the `exports` map because the entry points are a design choice (`ADR-AGENT-0002`), and it now resolves to a real, empty module. It carries **no symbol** until the file tools land, so importing it is safe but pointless. Note the split: the tools **port** and the dispatcher are pure and ship from `.`; only the concrete tools that touch the disk will live behind `./tools`.
 
 ### What `.` exports
 
-`.` re-exports the full `./llm` engine barrel, the context layer, and `ToolResult`. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives that layer standalone, without the context one). It exposes:
+`.` re-exports the full `./llm` engine barrel, the context layer, the pure half of the tools layer, and the agent layer. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives that layer standalone, without the rest). It exposes:
 
-- **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `ModelInfo`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
+- **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `ToolOutcome`, `Usage`, `LLMResponse`, `LLMChunk`, `ModelInfo`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
 - **Engine**: the `LLMProvider` port with its `CompletionOptions`, `OllamaLLMProvider`, the `PROVIDERS` registry with `resolveProvider` and `DEFAULT_OLLAMA_MODEL`, and the `LLMError` class.
 - **Context**: the `ContextStrategy` and `TokenCounter` ports, `SlidingWindowStrategy` (the V1 baseline: keep the newest history that fits, pin the system message, never split a tool call from its result) and `HeuristicTokenCounter` (characters divided by four, approximate by design, `ADR-AGENT-0008`). There is no `./context` subpath: the layer has no standalone consumer yet (`ADR-AGENT-0012`).
+- **Tools**: the `Tool` port, `dispatchTool` (which never throws) and `toToolDefinition`. All pure, hence here rather than behind `./tools`.
+- **Agent**: `AgenticLLM`, `defineAgent`, and the loop's contracts `AgentDefinition`, `AgentDeps`, `AgentInput`, `AgentState`, `AgentResult`, `Budget`, `StopReason`, plus `DEFAULT_LANDING_INSTRUCTION`.
 
 No disk access reaches `.`, so it stays importable everywhere (`ADR-AGENT-0002`).
 
@@ -133,6 +135,93 @@ console.log(salut.role, navigate.required, err.code);
 ```
 
 This import **compiles** and **runs**: `.` exposes both the contract types and the engine.
+
+---
+
+## Running an agent
+
+An agent is a **prompt plus tools**, declared in TypeScript and imported statically. There is no registry and no lookup by name: the compiler checks the wiring (`ADR-AGENT-0005`).
+
+```ts
+import {
+  AgenticLLM, defineAgent, OllamaLLMProvider,
+  SlidingWindowStrategy, HeuristicTokenCounter,
+  type Tool,
+} from "@a-world-felt/nathan-agent-core";
+
+// A tool returns an outcome; it never throws, and it does not know which call it answers.
+const navigate: Tool = {
+  name: "navigate",
+  description: "Aller à une page de l'application",
+  schema: { type: "object", properties: { page: { type: "string" } }, required: ["page"] },
+  async execute(args) {
+    return { content: `Vous êtes sur ${String(args.page)}`, isError: false };
+  },
+};
+
+const navigateur = defineAgent({
+  name: "navigateur",
+  prompt: "Tu aides une personne non voyante à se déplacer dans l'application.",
+  tools: [navigate],
+});
+
+const agent = new AgenticLLM({
+  agent: navigateur,
+  llm: new OllamaLLMProvider({ models: [{ id: "qwen2.5:0.5b", supportsTools: true }] }),
+  context: new SlidingWindowStrategy({ maxTokens: 4000, counter: new HeuristicTokenCounter() }),
+});
+
+const result = await agent.run("amène-moi aux réglages");
+console.log(result.content, result.stopReason, result.iterations);
+```
+
+### How a run ends
+
+The loop stops when the model asks for no tool. That is the nominal path and it is the providers' own mechanism, not a convention of ours (`ADR-AGENT-0003`).
+
+| `stopReason` | What happened |
+|---|---|
+| `completed` | the model returned no tool call |
+| `budget` | a bound fell, so the agent was asked to conclude |
+| `stuck` | the same call kept repeating, so the agent was asked to conclude |
+| `error` | reserved: nothing produces it, since a provider failure propagates as `LLMError` |
+
+**A forced exit is a landing, never a cutoff** (`ADR-AGENT-0011`). When a bound falls, the agent is told to conclude and the model is called once more **with no tools at all**, so it cannot call anything and therefore writes. You always get an answer rather than a truncated result, which matters when someone dictated a request and is waiting to hear one.
+
+### What you can tune
+
+Everything that shapes behaviour is a parameter, so a test harness can sweep it as an axis rather than inherit one hard-coded set.
+
+```ts
+new AgenticLLM({
+  agent: navigateur,
+  llm, context,
+  model: process.env.AGENT_MODEL,   // else the agent's recommendation, else the provider's first
+  tools: simulator.tools,           // swaps the real tools for a simulator's, no table involved
+  budget: {
+    maxIterations: 10,              // the default, and the last net against a loop bug
+    maxDurationMs: 30_000,
+    maxTokens: 50_000,
+    repetitionThreshold: 3,         // same call, same arguments, this many times in a row
+  },
+  landingInstruction: "Conclus maintenant avec ce que tu as.",
+  now: () => Date.now(),            // injectable clock, so a duration bound is testable
+});
+```
+
+The **first bound reached wins**. A bound that is not a finite number counts as unset, so `Number(process.env.SOMETHING_UNSET)` cannot silently disable the loop's safety net.
+
+### Driving the loop yourself
+
+`run()` is a `while` around a function you can call directly. Suspension is the primitive and the loop is the sugar (`ADR-AGENT-0003`), so a consumer that needs to interpose between two iterations, to ask for confirmation before a write for instance, drives it itself:
+
+```ts
+let state = agent.initialState("amène-moi aux réglages");
+while (state.stopReason === undefined) {
+  state = await agent.step(state);
+  // inspect state.history, state.toolCalls, state.iterations between iterations
+}
+```
 
 ---
 
