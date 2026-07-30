@@ -42,6 +42,54 @@ function navigateTool(): Tool & { readonly seen: Record<string, unknown>[] } {
   };
 }
 
+/** A tool that answers with its own name, for turns where only the shape of the calls matters. */
+function namedTool(name: string): Tool {
+  return {
+    name,
+    description: `Do what ${name} does`,
+    schema: { type: "object", properties: {} },
+    async execute() {
+      return { content: `${name} done`, isError: false };
+    },
+  };
+}
+
+/**
+ * Two tools writing into one shared trace, each yielding between its entry and its exit. Run in
+ * sequence the trace reads `start,end,start,end`; run concurrently the two would interleave, and
+ * that difference is the whole point of the assertion.
+ */
+function tracingTools(trace: string[]): Tool[] {
+  const tracing = (name: string): Tool => ({
+    name,
+    description: `Do what ${name} does, and say when it starts and ends`,
+    schema: { type: "object", properties: {} },
+    async execute() {
+      trace.push(`${name}:start`);
+      await yieldToTheEventLoop();
+      trace.push(`${name}:end`);
+      return { content: `${name} done`, isError: false };
+    },
+  });
+  return [tracing("navigate"), tracing("describe")];
+}
+
+/** Hand control back to the event loop, so a concurrent dispatch would have room to interleave. */
+function yieldToTheEventLoop(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
+/** One turn asking for two tools at once, which is what a model does when the calls are independent. */
+function twoCallResponse(firstId: string, secondId: string, second: string): LLMResponse {
+  return {
+    content: "",
+    toolCalls: [
+      { id: firstId, name: "navigate", arguments: { page: "reglages" } },
+      { id: secondId, name: second, arguments: {} },
+    ],
+  };
+}
+
 function agentWith(tools: readonly Tool[], recommendedModel?: string) {
   return defineAgent({
     name: "navigateur",
@@ -154,6 +202,28 @@ test("a tool round trip runs the tool and hands its answer back to the model", a
     content: "page = reglages",
     toolCallId: "call-1",
   });
+});
+
+test("the two calls of one turn run one after the other, never interleaved", async () => {
+  const trace: string[] = [];
+  const tools = tracingTools(trace);
+  const llm = new FakeLLMProvider({
+    responses: [twoCallResponse("call-1", "call-2", "describe"), textResponse("voila la page")],
+  });
+  const deps: AgentDeps = { agent: agentWith(tools), llm, context: wideContext() };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages et decris-la");
+
+  // A simulator's tools share one mutable state (ADR-AGENT-0006): each call must see what the
+  // previous one left behind, and concurrency would make that depend on the interleaving.
+  assert.deepEqual(trace, ["navigate:start", "navigate:end", "describe:start", "describe:end"]);
+  // Both answers go back, in the order asked, each carrying its own call id.
+  const answers = state.history.filter((message) => message.role === "tool");
+  assert.deepEqual(answers, [
+    { role: "tool", content: "navigate done", toolCallId: "call-1" },
+    { role: "tool", content: "describe done", toolCallId: "call-2" },
+  ]);
+  assert.equal(state.stopReason, "completed");
 });
 
 test("a tool that throws is caught, and the run carries on to an answer", async () => {
