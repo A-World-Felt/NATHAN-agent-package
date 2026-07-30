@@ -526,6 +526,27 @@ test("a repetition threshold below three is honoured rather than clamped", async
   assert.equal(llm.calls.length, 3);
 });
 
+test("when both would fire on the same iteration, the run is stuck rather than out of budget", async () => {
+  const navigate = navigateTool();
+  const repeated = () => callResponse("call-1", "navigate", { page: "reglages" });
+  const llm = new FakeLLMProvider({
+    responses: [repeated(), repeated(), textResponse("je tourne en rond")],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    // Both bounds fall on the third iteration: two repetitions, and two iterations spent.
+    budget: { maxIterations: 2, repetitionThreshold: 2 },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages");
+
+  // Being stuck is the more precise diagnosis, and the harness reads the reason as a measure of
+  // the model: "went in circles" and "ran long" are not the same result (ADR-AGENT-0011).
+  assert.equal(state.stopReason, "stuck");
+});
+
 test("two different calls in a row are not a repetition", async () => {
   const navigate = navigateTool();
   const llm = new FakeLLMProvider({
