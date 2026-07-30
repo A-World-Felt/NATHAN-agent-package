@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as root from "@a-world-felt/nathan-agent-core";
 import * as llm from "@a-world-felt/nathan-agent-core/llm";
+import * as tools from "@a-world-felt/nathan-agent-core/tools";
 import * as testing from "@a-world-felt/nathan-agent-core/testing";
 import type {
   AgentDefinition,
@@ -31,6 +32,14 @@ test("`./llm` exposes the llm layer standalone (incl. core types at runtime it r
   assert.equal(typeof llm.LLMError, "function");
   assert.equal(typeof llm.OllamaLLMProvider, "function");
   assert.equal(typeof llm.PROVIDERS, "object");
+});
+
+// The fourth branch of the exports map, and the one the other three tests left unlocked. A
+// declared entry point that throws on import is worse than one never declared, so it must resolve
+// from the day it is declared, even while the file tools it will carry are still to come
+// (ADR-AGENT-0002). Importing it at the top of this file is half the assertion.
+test("`./tools` resolves, and carries no tool yet", () => {
+  assert.deepEqual(Object.keys(tools), []);
 });
 
 test("`./testing` exposes the fake and the provider contract check", () => {
