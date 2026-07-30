@@ -213,4 +213,5 @@ Versioning and evaluation are the same feature seen from two angles: versioning 
 | Real tokenizer per model family | when calibration shows drift beyond margin |
 | Tool rendering in prompt (models without native calls) | when a targeted model is declared with `supportsTools: false` |
 | Web interface for reports | in the IDE repo, never in the package |
+| CI replaying the test and typecheck gates on a PR | when the Actions minutes are worth paying for. Deliberately absent, not an oversight: the gates run locally and in the review cycle, and `publish.yml` was trimmed to build and publish for the same reason. Until then the suite is advisory, whoever pushes is what enforces it |
 | Declared-model verification against the server (`ADR-AGENT-0017`) | when a deployment actually runs a local server. The showcase prototype calls hosted providers, where a declared model cannot be missing from a local install, so the gap does not arise. Until then the first call reports it, with the `ollama pull` command to run |
