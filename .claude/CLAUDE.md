@@ -103,10 +103,10 @@ src/
 
   agent/                        # the app
     models/agent-definition.ts
-    services/define-agent.ts      pure
-    services/step.ts              pure, one iteration of the loop
+    services/define-agent.ts      pure: invokes no port, imports only models/
     application/
       dtos/index.ts               AgentDeps, AgentInput, AgentResult, AgentState
+      use-cases/step.ts           one iteration; a function, but it calls ports
       use-cases/agentic-llm.ts    AgenticLLM, a CLASS (public API)
       use-cases/voice-agentic-llm.ts   VoiceAgenticLLM (V4)
     testing/                      the agent test harness (→ ./testing); names TBD
@@ -160,7 +160,7 @@ Each framework follows the same pattern:
 |---|---|---|
 | **Public API** with state and several operations | **class** | `AgenticLLM`, `VoiceAgenticLLM` |
 | Adapter implementing a port via I/O | class | `OllamaLLMProvider`, `SlidingWindowStrategy`, the tools |
-| Pure function for orchestration or computation | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
+| Orchestration or computation, no state of its own | function | `step`, `dispatchTool`, `defineAgent`, aggregation |
 
 ```ts
 // public API: what the consumer repo manipulates
@@ -168,7 +168,9 @@ const agent = new AgenticLLM({ llm, context, tools, maxIterations: 10 });
 const result = await agent.run("amène-moi aux réglages");
 ```
 
-`AgenticLLM.run()` wraps a **pure function** `step(state, deps)`: testable in isolation, without instantiating the class. The class is the API, the functions are the mechanics.
+`AgenticLLM.run()` wraps a **function** `step(state, deps)`: testable in isolation, without instantiating the class. The class is the API, the functions are the mechanics.
+
+> **"Function" here does not mean "belongs in `services/`".** `step` returns a new state instead of mutating one, which is what makes it testable, but it awaits the ports it is handed, so it lives in `application/use-cases/` by the placement rule above. `services/` is reserved for what invokes no port at all, `defineAgent` being the example. Confusing the two is how a plan once ended up requiring a `services/` file to import `interfaces/`, which is forbidden outright.
 
 > A published package has a constraint an application does not: **a discoverable API surface**. `agent.` triggers autocompletion; a function returned by a factory exposes nothing. Justification: `ADR-AGENT-0009`.
 
