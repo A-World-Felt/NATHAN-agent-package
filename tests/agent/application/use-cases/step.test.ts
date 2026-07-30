@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { defineAgent, initialState, step } from "../../../../dist/agent/index.js";
+import {
+  DEFAULT_LANDING_INSTRUCTION,
+  defineAgent,
+  initialState,
+  step,
+} from "../../../../dist/agent/index.js";
 import type { AgentDeps, AgentState } from "../../../../dist/agent/index.js";
 import { HeuristicTokenCounter, SlidingWindowStrategy } from "../../../../dist/context/index.js";
 import type { ContextStrategy } from "../../../../dist/context/index.js";
@@ -352,6 +357,66 @@ test("optional bounds that are not finite numbers are no bounds, not bounds alre
 
   assert.equal(state.stopReason, "completed");
   assert.equal(state.lastContent, "tu y es");
+});
+
+test("the landing call tells the model to conclude, which is what makes it a landing", async () => {
+  const navigate = navigateTool();
+  const llm = new FakeLLMProvider({
+    responses: [
+      callResponse("call-1", "navigate", { page: "reglages" }),
+      textResponse("voici ce que j'ai trouve"),
+    ],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    budget: { maxIterations: 1 },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages");
+
+  // Without the instruction, the last call is a bare continuation and nothing asks for an answer.
+  const landingCall = llm.calls[1];
+  assert.deepEqual(landingCall.messages.at(-1), {
+    role: "user",
+    content: DEFAULT_LANDING_INSTRUCTION,
+  });
+  // Only on the landing call: the first one must not carry it.
+  const firstCallCarriedIt = llm.calls[0].messages.some(
+    (message) => message.content === DEFAULT_LANDING_INSTRUCTION,
+  );
+  assert.equal(firstCallCarriedIt, false);
+  assert.equal(state.stopReason, "budget");
+});
+
+test("a caller's own landing instruction replaces the shipped one", async () => {
+  const navigate = navigateTool();
+  const llm = new FakeLLMProvider({
+    responses: [
+      callResponse("call-1", "navigate", { page: "reglages" }),
+      textResponse("voici ce que j'ai trouve"),
+    ],
+  });
+  // This is how a consumer speaks to the person in their own language, which is the reason the
+  // instruction is a knob rather than a constant.
+  const inFrench = "Le budget est atteint. N'appelle plus d'outil, reponds avec ce que tu as.";
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    budget: { maxIterations: 1 },
+    landingInstruction: inFrench,
+  };
+
+  await driveWithStep(deps, "amene-moi aux reglages");
+
+  const landingCall = llm.calls[1];
+  assert.deepEqual(landingCall.messages.at(-1), { role: "user", content: inFrench });
+  const carriedTheDefaultToo = landingCall.messages.some(
+    (message) => message.content === DEFAULT_LANDING_INSTRUCTION,
+  );
+  assert.equal(carriedTheDefaultToo, false);
 });
 
 test("the elapsed-time bound lands the run, on the injected clock", async () => {
