@@ -146,24 +146,52 @@ type ForcedReason = Extract<StopReason, "budget" | "stuck">;
 function isStuck(state: AgentState, deps: AgentDeps): boolean {
   const repetition = state.repetition;
   if (repetition === undefined) return false;
-  const threshold = deps.budget?.repetitionThreshold ?? DEFAULT_REPETITION_THRESHOLD;
+  const threshold = boundOr(deps.budget?.repetitionThreshold, DEFAULT_REPETITION_THRESHOLD);
   return repetition.count >= threshold;
 }
 
 /** The first bound reached wins, and one always exists: `maxIterations` defaults to 10. */
 function isOverBudget(state: AgentState, deps: AgentDeps): boolean {
   const budget = deps.budget;
-  const maxIterations = budget?.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+  const maxIterations = boundOr(budget?.maxIterations, DEFAULT_MAX_ITERATIONS);
   if (state.iterations >= maxIterations) return true;
 
-  if (budget?.maxTokens !== undefined && state.tokensUsed >= budget.maxTokens) return true;
+  const maxTokens = optionalBound(budget?.maxTokens);
+  if (maxTokens !== undefined && state.tokensUsed >= maxTokens) return true;
 
-  if (budget?.maxDurationMs !== undefined) {
+  const maxDurationMs = optionalBound(budget?.maxDurationMs);
+  if (maxDurationMs !== undefined) {
     const elapsed = clock(deps)() - state.startedAt;
-    if (elapsed >= budget.maxDurationMs) return true;
+    if (elapsed >= maxDurationMs) return true;
   }
 
   return false;
+}
+
+/**
+ * A bound counts as configured only when it is a **finite** number, and anything else falls back
+ * to the default rather than silently removing the bound.
+ *
+ * `??` catches `undefined` and `null`, not `NaN`, and `Number(process.env.AGENT_MAX_ITERATIONS)`
+ * is `NaN` whenever that variable is unset. Every comparison against `NaN` is false, so such a
+ * bound would never be reached and the loop would lose the last net ADR-AGENT-0011 gives it.
+ * `Infinity` is refused for the same reason: a bound that cannot fall is not a bound.
+ */
+function boundOr(configured: number | undefined, fallback: number): number {
+  if (configured === undefined) return fallback;
+  if (!Number.isFinite(configured)) return fallback;
+  return configured;
+}
+
+/**
+ * The same rule for a bound with no default: not finite means not configured, so the run is
+ * bounded by the others rather than landing on the spot. What it protects against is the
+ * mirror mistake, reading `NaN` as a bound already reached.
+ */
+function optionalBound(configured: number | undefined): number | undefined {
+  if (configured === undefined) return undefined;
+  if (!Number.isFinite(configured)) return undefined;
+  return configured;
 }
 
 /**

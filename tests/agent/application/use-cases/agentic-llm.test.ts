@@ -4,7 +4,7 @@ import { AgenticLLM, defineAgent, toResult } from "../../../../dist/agent/index.
 import type { AgentDeps } from "../../../../dist/agent/index.js";
 import { HeuristicTokenCounter, SlidingWindowStrategy } from "../../../../dist/context/index.js";
 import type { ContextStrategy } from "../../../../dist/context/index.js";
-import type { LLMResponse } from "../../../../dist/llm/index.js";
+import type { LLMProvider, LLMResponse } from "../../../../dist/llm/index.js";
 import type { Tool } from "../../../../dist/tools/index.js";
 import { FakeLLMProvider } from "../../../../dist/testing/index.js";
 
@@ -43,6 +43,27 @@ function depsFor(responses: LLMResponse[], tools: readonly Tool[]): AgentDeps {
     }),
     llm: new FakeLLMProvider({ responses }),
     context: wideContext(),
+  };
+}
+
+/**
+ * A provider that always asks for one more tool, and stops itself after `hardStop` calls. The
+ * hard stop is what makes a loop that fails to bound itself fail the test instead of hanging it.
+ * Every call names a different page, so the repetition detector is never what ends the run.
+ */
+function endlessCaller(hardStop: number): LLMProvider {
+  let made = 0;
+  return {
+    id: "endless",
+    supportsStreaming: () => false,
+    models: () => [{ id: "endless-model", supportsTools: true }],
+    async complete(): Promise<LLMResponse> {
+      made += 1;
+      if (made > hardStop) {
+        throw new Error(`the loop made ${made} calls without ever bounding itself`);
+      }
+      return callResponse(`call-${made}`, "navigate", { page: `page-${made}` });
+    },
   };
 }
 
@@ -92,6 +113,28 @@ test("run lands on a written answer when the budget falls", async () => {
 
   assert.equal(result.stopReason, "budget");
   assert.equal(result.content, "voici ce que j'ai");
+});
+
+test("run still ends when the iteration bound is not a finite number", async () => {
+  const navigate = navigateTool();
+  const deps: AgentDeps = {
+    agent: defineAgent({
+      name: "navigateur",
+      prompt: "Tu aides une personne a naviguer dans l'application.",
+      tools: [navigate],
+    }),
+    llm: endlessCaller(20),
+    context: wideContext(),
+    // A bound read from an unset environment variable. The loop's last net has to survive it.
+    budget: { maxIterations: Number.NaN },
+  };
+  const agent = new AgenticLLM(deps);
+
+  const result = await agent.run("amene-moi aux reglages");
+
+  assert.equal(result.stopReason, "budget");
+  // Ten iterations on the default bound, then the landing call.
+  assert.equal(result.iterations, 11);
 });
 
 test("a caller can drive the loop itself, one iteration at a time", async () => {

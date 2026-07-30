@@ -226,6 +226,64 @@ test("the landing call carries no tools at all, which is what forces the answer"
   assert.equal(Object.hasOwn(llm.calls[1].opts, "tools"), false);
 });
 
+test("an iteration bound that is not a finite number falls back to the default", async () => {
+  const navigate = navigateTool();
+  const llm = new FakeLLMProvider({ responses: [textResponse("je conclus sur le net de secours")] });
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    // What `Number(process.env.AGENT_MAX_ITERATIONS)` yields when the variable is not set. `??`
+    // does not catch it, so an unguarded bound would compare false forever and never land.
+    budget: { maxIterations: Number.NaN },
+  };
+  // The default bound, already reached: one step must land rather than call the model again.
+  const state: AgentState = { ...initialState("amene-moi aux reglages", deps), iterations: 10 };
+
+  const landed = await step(state, deps);
+
+  assert.equal(landed.stopReason, "budget");
+  assert.equal(landed.lastContent, "je conclus sur le net de secours");
+});
+
+test("a repetition threshold that is not a finite number falls back to the default", async () => {
+  const navigate = navigateTool();
+  const repeated = () => callResponse("call-1", "navigate", { page: "reglages" });
+  const llm = new FakeLLMProvider({
+    responses: [repeated(), repeated(), repeated(), textResponse("je tourne en rond")],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    budget: { repetitionThreshold: Number.NaN },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages");
+
+  assert.equal(state.stopReason, "stuck");
+  // Three repetitions on the default threshold, then the landing call.
+  assert.equal(llm.calls.length, 4);
+});
+
+test("optional bounds that are not finite numbers are no bounds, not bounds already reached", async () => {
+  const navigate = navigateTool();
+  const llm = new FakeLLMProvider({
+    responses: [callResponse("call-1", "navigate", { page: "reglages" }), textResponse("tu y es")],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith([navigate]),
+    llm,
+    context: wideContext(),
+    budget: { maxTokens: Number.NaN, maxDurationMs: Number.NaN },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages");
+
+  assert.equal(state.stopReason, "completed");
+  assert.equal(state.lastContent, "tu y es");
+});
+
 test("the elapsed-time bound lands the run, on the injected clock", async () => {
   const navigate = navigateTool();
   const llm = new FakeLLMProvider({

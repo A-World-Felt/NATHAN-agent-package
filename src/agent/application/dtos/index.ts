@@ -23,6 +23,11 @@ export type StopReason = "completed" | "budget" | "stuck" | "error";
  *
  * Every field is a knob on purpose. Termination behaviour varies by model, so the harness has to
  * be able to sweep these as axes rather than inherit one hard-coded set.
+ *
+ * **A bound counts as configured only when it is a finite number.** `NaN` and `Infinity` fall
+ * back to the default instead of disabling the bound, because these values usually come from
+ * wiring rather than from intent: `Number(process.env.AGENT_MAX_ITERATIONS)` is `NaN` whenever
+ * that variable is unset, and a bound that can never be reached is not a bound.
  */
 export type Budget = {
   /**

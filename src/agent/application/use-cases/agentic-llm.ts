@@ -26,7 +26,8 @@ export class AgenticLLM {
    *
    * The loop always ends: `step` sets a reason on the natural path, and otherwise a bound
    * eventually forces a landing, which sets one unconditionally. `maxIterations` defaults to 10
-   * precisely so a bound exists even when a consumer configures nothing.
+   * precisely so a bound exists even when a consumer configures nothing, and a bound configured
+   * with a non-finite number falls back to that default rather than disabling itself.
    *
    * Each run starts from a fresh state, so two runs on the same instance share the wiring and
    * nothing else.
