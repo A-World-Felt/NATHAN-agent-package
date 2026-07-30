@@ -297,7 +297,16 @@ function nextRepetition(
   return { signature, count: 1 };
 }
 
-/** One turn's whole set of calls, so asking for the same two tools twice counts as a repetition. */
+/**
+ * One turn's calls, in the order the model asked for them, so asking for the same two tools twice
+ * counts as a repetition.
+ *
+ * Order matters here: the same two calls swapped between two turns read as two different turns
+ * and escape detection. That costs a missed detection rather than a false one, and the run then
+ * lands on its budget. Sorting them would close that gap and open a worse one: two tools sharing
+ * a state do not do the same thing in the opposite order, so a swapped pair is not obviously the
+ * agent going in circles.
+ */
 function signatureOf(calls: ToolCall[]): string {
   return calls.map((call) => `${call.name}(${stableStringify(call.arguments)})`).join("|");
 }
