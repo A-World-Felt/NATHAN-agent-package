@@ -3,3 +3,4 @@ export * from "./models/index.js";
 export * from "./services/define-agent.js";
 export * from "./application/dtos/index.js";
 export * from "./application/use-cases/step.js";
+export * from "./application/use-cases/agentic-llm.js";
