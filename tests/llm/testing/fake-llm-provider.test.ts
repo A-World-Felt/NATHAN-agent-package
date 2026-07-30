@@ -48,14 +48,15 @@ test("declares no streaming, and exactly one tool-capable model", () => {
   assert.deepEqual(fake.models(), [{ id: MODEL, supportsTools: true }]);
 });
 
-test("supportsTools is configurable, the model id is not", () => {
-  const toolless = new FakeLLMProvider({ supportsTools: false, responses: [] });
-  assert.deepEqual(toolless.models(), [{ id: MODEL, supportsTools: false }]);
+test("the whole declaration is fixed: config decides nothing but the script", () => {
+  const fake = new FakeLLMProvider({ responses: [] });
+  assert.equal(fake.id, "fake");
 
   // A caller mutating the returned list must not reach the fake's own declaration.
-  const first = toolless.models();
+  const first = fake.models();
   first[0].id = "tampered";
-  assert.equal(toolless.models()[0].id, MODEL);
+  first[0].supportsTools = false;
+  assert.deepEqual(fake.models(), [{ id: MODEL, supportsTools: true }]);
 });
 
 test("throws when the script is exhausted", async () => {
