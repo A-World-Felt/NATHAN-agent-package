@@ -4,9 +4,16 @@ import * as root from "@a-world-felt/nathan-agent-core";
 import * as llm from "@a-world-felt/nathan-agent-core/llm";
 import * as testing from "@a-world-felt/nathan-agent-core/testing";
 import type {
+  AgentDefinition,
+  AgentDeps,
+  AgentInput,
+  AgentResult,
+  AgentState,
+  Budget,
   CompletionOptions,
   LLMProvider,
   ModelInfo,
+  StopReason,
   Tool,
   ToolCall,
   ToolDefinition,
@@ -98,4 +105,49 @@ test("`./llm` does not carry the context layer", () => {
   const surface = llm as Record<string, unknown>;
   assert.equal(surface.SlidingWindowStrategy, undefined);
   assert.equal(surface.HeuristicTokenCounter, undefined);
+});
+
+test("`.` exposes the agent framework: the class, the loop's mechanics, defineAgent", () => {
+  const surface = root as Record<string, unknown>;
+  for (const name of ["AgenticLLM", "defineAgent", "step", "initialState", "toResult"]) {
+    assert.equal(typeof surface[name], "function", `missing ${name}`);
+  }
+  assert.equal(typeof surface.DEFAULT_LANDING_INSTRUCTION, "string");
+});
+
+test("`./llm` does not carry the agent layer", () => {
+  const surface = llm as Record<string, unknown>;
+  assert.equal(surface.AgenticLLM, undefined);
+  assert.equal(surface.defineAgent, undefined);
+});
+
+// Same reasoning as the two type tests above: these names are types, so `node --test` cannot see
+// them leave the barrel. Each annotates a value the package itself produced, and the gate that
+// enforces it is `npm run typecheck`.
+test("`.` exposes the loop's contracts and the types a run needs", async () => {
+  const navigateur: AgentDefinition = root.defineAgent({
+    name: "navigateur",
+    prompt: "Tu aides une personne a naviguer dans l'application.",
+    tools: [],
+  });
+  const budget: Budget = { maxIterations: 1 };
+  const deps: AgentDeps = {
+    agent: navigateur,
+    llm: new testing.FakeLLMProvider({ responses: [{ content: "bonjour", toolCalls: [] }] }),
+    context: new root.SlidingWindowStrategy({
+      maxTokens: 1_000,
+      counter: new root.HeuristicTokenCounter(),
+    }),
+    budget,
+  };
+  const agent = new root.AgenticLLM(deps);
+  const input: AgentInput = "bonjour";
+
+  const start: AgentState = agent.initialState(input);
+  const result: AgentResult = await agent.run(input);
+  const reason: StopReason = result.stopReason;
+
+  assert.equal(start.iterations, 0);
+  assert.equal(result.content, "bonjour");
+  assert.equal(reason, "completed");
 });
