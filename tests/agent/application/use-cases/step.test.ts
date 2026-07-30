@@ -482,6 +482,53 @@ test("two different calls in a row are not a repetition", async () => {
   assert.equal(state.stopReason, "completed");
 });
 
+test("asking for the same two tools twice is one repetition, whatever the call ids", async () => {
+  const tools = [namedTool("navigate"), namedTool("describe")];
+  const llm = new FakeLLMProvider({
+    responses: [
+      twoCallResponse("call-1", "call-2", "describe"),
+      // The same two calls again, with the ids a provider hands out fresh on every turn.
+      twoCallResponse("call-3", "call-4", "describe"),
+      textResponse("je tourne en rond"),
+    ],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith(tools),
+    llm,
+    context: wideContext(),
+    budget: { repetitionThreshold: 2 },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages et decris-la");
+
+  assert.equal(state.stopReason, "stuck");
+  assert.equal(llm.calls.length, 3);
+});
+
+test("two turns that share only their first call are not a repetition", async () => {
+  const tools = [namedTool("navigate"), namedTool("describe"), namedTool("click")];
+  const llm = new FakeLLMProvider({
+    responses: [
+      twoCallResponse("call-1", "call-2", "describe"),
+      // Same first call, different second one: the signature covers the whole turn, so this is
+      // progress rather than a loop, and the run must be allowed to continue.
+      twoCallResponse("call-3", "call-4", "click"),
+      textResponse("les deux sont faites"),
+    ],
+  });
+  const deps: AgentDeps = {
+    agent: agentWith(tools),
+    llm,
+    context: wideContext(),
+    budget: { repetitionThreshold: 2 },
+  };
+
+  const state = await driveWithStep(deps, "amene-moi aux reglages puis clique");
+
+  assert.equal(state.stopReason, "completed");
+  assert.equal(state.lastContent, "les deux sont faites");
+});
+
 test("an agent with no tools sends no tools field at all", async () => {
   const llm = new FakeLLMProvider({ responses: [textResponse("je n'ai pas d'outil")] });
   const deps: AgentDeps = { agent: agentWith([]), llm, context: wideContext() };
