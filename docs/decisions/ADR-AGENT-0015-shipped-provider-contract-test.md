@@ -1,6 +1,6 @@
 # ADR-AGENT-0015: The package ships a provider contract test
 
-- **Status**: ✅ Accepted
+- **Status**: ✅ Accepted, checked invariant set amended by ADR-AGENT-0017
 - **Date**: 2026-07-24
 - **Deciders**: Arthur-Olivier Fortin
 - **Scope**: `@a-world-felt/nathan-agent-core`
@@ -83,5 +83,9 @@ contract checks exactly what the provider claims to support, no more.
 
 - Same rationale and same runner-agnostic constraint as the harness (ADR-AGENT-0006); ships
   from `./testing` (ADR-AGENT-0002).
-- Checks the invariants frozen by the port (ADR-AGENT-0013): required capabilities, the
-  `LLMResponse` shape, and the streaming chunk protocol with its terminal `usage`.
+- Checks the invariants frozen by the port. That set was ADR-AGENT-0013's required
+  capabilities until ADR-AGENT-0017 reshaped the port; it is now the vendor `id`, the
+  models a provider declares, the `LLMResponse` shape, and the streaming chunk protocol
+  with its terminal `usage`. The function also takes a model to exercise, since the model
+  travels per call. This is the cost the Negative section below predicted: an invariant the
+  port gains later has to be added here too.

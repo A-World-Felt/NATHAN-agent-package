@@ -17,9 +17,9 @@ test("a conformant provider (the fake) yields a fully-ok report", async () => {
 
 test("a broken provider yields report.ok=false with the failing check named", async () => {
   const broken: LLMProvider = {
-    model: "broken",
-    supportsTools: () => true,
+    id: "broken",
     supportsStreaming: () => false,
+    models: () => [{ id: "broken-model", supportsTools: true }],
     // content is a number, not a string: violates the LLMResponse shape.
     complete: async () => ({ content: 123, toolCalls: [] } as unknown as LLMResponse),
   };

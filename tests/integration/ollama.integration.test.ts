@@ -11,7 +11,8 @@ test(
   "OllamaLLMProvider conforms to the port against a live Ollama",
   { skip: OPT_IN ? false : "set OLLAMA_INTEGRATION=1 with Ollama running" },
   async () => {
-    const provider = new OllamaLLMProvider({ model: process.env.OLLAMA_MODEL ?? "qwen2.5:0.5b" });
+    const model = process.env.OLLAMA_MODEL ?? "qwen2.5:0.5b";
+    const provider = new OllamaLLMProvider({ models: [{ id: model, supportsTools: true }] });
     // The real provider reports supportsStreaming() === true, so this also
     // exercises the streaming checks against the live endpoint.
     const report = await checkProviderContract(provider);

@@ -1,6 +1,6 @@
 # @a-world-felt/nathan-agent-core
 
-> **Current version: 0.2.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
+> **Current version: 0.3.0-alpha** (prerelease). The public API is not frozen yet; the `.`, `./llm`, and `./testing` entry points ship (`./tools` is still coming). See [ROADMAP.md](./ROADMAP.md).
 
 A **reusable** LLM agentic engine: the **engine** (LLM providers, tools, loop, memory), the **agent definitions** (prompt + tools), and an **agent test harness**. Provider-agnostic **and** application-agnostic: **the consumer repo chooses its provider and brings its own tools**. It plugs into any Node/TypeScript project.
 
@@ -23,13 +23,13 @@ The package is published to the organization's **GitHub Packages registry** unde
 ```
 
 ```bash
-npm i @a-world-felt/nathan-agent-core@^0.2.0-alpha
+npm i @a-world-felt/nathan-agent-core@^0.3.0-alpha
 ```
 
 ```json
 {
   "dependencies": {
-    "@a-world-felt/nathan-agent-core": "^0.2.0-alpha"
+    "@a-world-felt/nathan-agent-core": "^0.3.0-alpha"
   }
 }
 ```
@@ -93,21 +93,21 @@ Under NodeNext, your own relative imports also carry the `.js` extension, even f
 
 Four subpaths, **opt-in**: an agent receives only what you pass it, nothing implicit.
 
-| Subpath | Contents | State in `0.2.0-alpha` |
+| Subpath | Contents | State in `0.3.0-alpha` |
 |---|---|---|
 | `.` | engine, ports, types (**no disk access**, importable anywhere) | **available** (contract models, LLM layer, context layer) |
 | `./llm` | LLM layer: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry + `resolveProvider`, and the LLM models | **available** |
 | `./tools` | generic file tools (coupled to `fs`, opt-in) | **coming** (PR2+) |
 | `./testing` | test harness: `FakeLLMProvider` + `checkProviderContract` (simulator, scenarios coming) | **available** (`FakeLLMProvider`, `checkProviderContract`) |
 
-> In `0.2.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
+> In `0.3.0-alpha`, `.`, `./llm`, and `./testing` resolve to code; `./tools` is declared in the `exports` map (the entry points are a design choice, `ADR-AGENT-0002`) but its file tools are still a skeleton: **do not import `./tools` before the PR that fills it in.**
 
 ### What `.` exports
 
 `.` re-exports the full `./llm` engine barrel, the context layer, and `ToolResult`. The umbrella entry point carries everything the LLM layer offers (importing from `./llm` gives that layer standalone, without the context one). It exposes:
 
-- **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
-- **Engine**: the `LLMProvider` port, `OllamaLLMProvider`, the `PROVIDERS` registry and `resolveProvider`, and the `LLMError` class.
+- **Models** (pure types): `Role`, `Message`, `ToolCall`, `ToolDefinition`, `ToolResult`, `Usage`, `LLMResponse`, `LLMChunk`, `ModelInfo`, `LLMErrorCode`, and the JSON-Schema types `JSONSchemaType`, `JSONSchemaProperty`, `ToolSchema`.
+- **Engine**: the `LLMProvider` port with its `CompletionOptions`, `OllamaLLMProvider`, the `PROVIDERS` registry with `resolveProvider` and `DEFAULT_OLLAMA_MODEL`, and the `LLMError` class.
 - **Context**: the `ContextStrategy` and `TokenCounter` ports, `SlidingWindowStrategy` (the V1 baseline: keep the newest history that fits, pin the system message, never split a tool call from its result) and `HeuristicTokenCounter` (characters divided by four, approximate by design, `ADR-AGENT-0008`). There is no `./context` subpath: the layer has no standalone consumer yet (`ADR-AGENT-0012`).
 
 No disk access reaches `.`, so it stays importable everywhere (`ADR-AGENT-0002`).
@@ -145,23 +145,36 @@ The `./llm` subpath ships the LLM layer: the `LLMProvider` port, the `OllamaLLMP
 ```ts
 import { OllamaLLMProvider, type Message } from "@a-world-felt/nathan-agent-core/llm";
 
-const provider = new OllamaLLMProvider({ model: "qwen2.5:0.5b" });
+// A provider is a vendor: it offers several models, and you name one per call.
+const provider = new OllamaLLMProvider({
+  models: [
+    { id: "qwen2.5:0.5b", supportsTools: true },
+    { id: "qwen2.5:7b", supportsTools: true, maxInputTokens: 32768 },
+  ],
+});
 
 const messages: Message[] = [{ role: "user", content: "Bonjour !" }];
 
 // One-shot completion → { content, toolCalls, usage? }.
-const res = await provider.complete(messages);
+const res = await provider.complete(messages, { model: "qwen2.5:0.5b" });
 console.log(res.content); // the assistant text
 console.log(res.usage);   // { tokensIn, tokensOut } | undefined
 
 // Streaming → yields { contentDelta, done, usage? }; the terminal chunk carries usage.
-for await (const chunk of provider.stream(messages)) {
+for await (const chunk of provider.stream(messages, { model: "qwen2.5:0.5b" })) {
   process.stdout.write(chunk.contentDelta);
   if (chunk.done) console.log("\n", chunk.usage);
 }
 ```
 
-`OllamaLLMProvider`'s constructor takes `{ model, baseURL?, supportsTools?, fetch? }`. `baseURL` defaults to `process.env.OLLAMA_HOST ?? "http://localhost:11434"`; `fetch` is injectable (the real global `fetch` in prod, a fake in tests). `complete(messages, tools?)` and `stream(messages, tools?)` optionally take a list of `ToolDefinition`s to present to the model.
+`OllamaLLMProvider`'s constructor takes `{ models, baseURL?, fetch? }`. `baseURL` defaults to `process.env.OLLAMA_HOST ?? "http://localhost:11434"`; `fetch` is injectable (the real global `fetch` in prod, a fake in tests). `complete` and `stream` take `{ model, tools? }`, where `tools` is the list of `ToolDefinition`s to present to the model on that call.
+
+**Models are declared, never discovered** (`ADR-AGENT-0017`). The package queries no catalogue and checks no hardware: it reports what you declared, and `provider.models()` returns it synchronously. Two consequences worth knowing:
+
+- Asking for a model you did not declare raises `LLMError("MODEL_NOT_FOUND")` **before any request**, listing what you did declare.
+- Asking for one you declared but never installed gets the same code from Ollama's 404, with the `ollama pull` command to run.
+
+Whether a model can call tools is declared per model, on `supportsTools`, because that is where it varies. Streaming is declared once per provider, by `supportsStreaming()`, because it is a property of the transport.
 
 ### The provider registry
 
@@ -171,13 +184,13 @@ For **env-driven** selection, the registry maps a typed provider id to a factory
 import { PROVIDERS, resolveProvider } from "@a-world-felt/nathan-agent-core/llm";
 
 // Direct, typed access to a known provider:
-const a = PROVIDERS.ollama(); // OllamaLLMProvider built from OLLAMA_MODEL
+const a = PROVIDERS.ollama(); // declares the single model named by OLLAMA_MODEL
 
 // From a runtime string (e.g. an env var); throws LLMError("UNKNOWN_PROVIDER") on an unknown id:
 const b = resolveProvider(process.env.LLM_PROVIDER ?? "ollama");
 ```
 
-`PROVIDERS.ollama()` builds the provider from `process.env.OLLAMA_MODEL` (falling back to `qwen2.5:0.5b`). The library reads `process.env`; the consuming application loads its `.env`.
+`PROVIDERS.ollama()` declares **one** model, `process.env.OLLAMA_MODEL ?? DEFAULT_OLLAMA_MODEL`, read at call time. It is the environment-driven shortcut; offering several models is the explicit path, `new OllamaLLMProvider({ models: [...] })`. The library reads `process.env`; the consuming application loads its `.env`.
 
 ### Verifying a provider
 

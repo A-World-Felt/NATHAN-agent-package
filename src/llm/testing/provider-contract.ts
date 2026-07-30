@@ -1,4 +1,5 @@
 import type { LLMProvider } from "../interfaces/index.js";
+import type { ModelInfo } from "../models/index.js";
 
 /** One invariant of the port, checked in isolation. `detail` is filled only on failure. */
 export type ContractCheck = { name: string; ok: boolean; detail?: string };
@@ -38,6 +39,20 @@ const seen = (v: unknown): string => {
 const errorMessage = (err: unknown): string =>
   err instanceof Error ? err.message : String(err);
 
+/** A declared model that fails the required shape; what findIndex looks for. */
+const isMalformedModel = (m: unknown): boolean =>
+  !(isRecord(m) && typeof m.id === "string" && m.id.length > 0 && typeof m.supportsTools === "boolean");
+
+/** `provider.models()` without letting a throwing implementation crash the run. */
+const readDeclaredModels = (provider: LLMProvider): ModelInfo[] => {
+  try {
+    const models = provider.models();
+    return Array.isArray(models) ? models : [];
+  } catch {
+    return []; // recorded as a failure by the models() checks below
+  }
+};
+
 /** Normalize a check body's result (a bare boolean, or `{ ok, detail }`) into a ContractCheck. */
 const toContractCheck = (name: string, result: CheckResult): ContractCheck => {
   if (typeof result === "boolean") return { name, ok: result };
@@ -59,10 +74,18 @@ const toContractCheck = (name: string, result: CheckResult): ContractCheck => {
  */
 export async function checkProviderContract(
   provider: LLMProvider,
-  opts?: { prompt?: string },
+  opts?: { prompt?: string; model?: string },
 ): Promise<ContractReport> {
   const prompt = opts?.prompt ?? "ping";
   const checks: ContractCheck[] = [];
+
+  // The model to exercise: the caller's, else the first one the provider declares (ADR-AGENT-0017).
+  // A caller passing its own must pass a declared one, since the guard checked below refuses the
+  // rest: an undeclared model here surfaces as "complete() resolves" failing with MODEL_NOT_FOUND.
+  // models() belongs to the provider under test, so it may throw; a failure here is recorded
+  // by the checks below rather than crashing the run.
+  const declaredModels = readDeclaredModels(provider);
+  const model = opts?.model ?? declaredModels[0]?.id ?? "";
 
   // Run one invariant and record its outcome. `body` is a function on purpose: deferring it lets us
   // wrap it in try/catch, so if the invariant throws (any call into the untrusted provider might),
@@ -76,17 +99,26 @@ export async function checkProviderContract(
     }
   };
 
-  await check("model is a non-empty string", () =>
-    typeof provider.model === "string" && provider.model.length > 0
+  await check("id is a non-empty string", () =>
+    typeof provider.id === "string" && provider.id.length > 0
       ? true
-      : { ok: false, detail: `model = ${seen(provider.model)}` },
+      : { ok: false, detail: `id = ${seen(provider.id)}` },
   );
 
-  await check("supportsTools() returns a boolean", () => {
-    const supportsTools = provider.supportsTools();
-    return typeof supportsTools === "boolean"
+  await check("models() returns at least one model", () => {
+    const models = provider.models();
+    return Array.isArray(models) && models.length > 0
       ? true
-      : { ok: false, detail: `supportsTools() = ${seen(supportsTools)}` };
+      : { ok: false, detail: `models() = ${seen(models)}` };
+  });
+
+  await check("each model has an id and a supportsTools boolean", () => {
+    // Bound once: models() belongs to the provider under test, so calling it twice could
+    // return two different lists and report an index against the wrong one.
+    const models = provider.models();
+    const badIndex = models.findIndex(isMalformedModel);
+    if (badIndex === -1) return true;
+    return { ok: false, detail: `model #${badIndex} = ${seen(models[badIndex])}` };
   });
 
   await check("supportsStreaming() returns a boolean", () => {
@@ -96,12 +128,28 @@ export async function checkProviderContract(
       : { ok: false, detail: `supportsStreaming() = ${seen(supportsStreaming)}` };
   });
 
+  // Refusing an undeclared model is a property of the port, not one adapter's habit
+  // (ADR-AGENT-0017): a guard one provider honours and another ignores is not a contract,
+  // so the shipped check is what makes it one.
+  await check("complete() refuses a model the provider does not declare", async () => {
+    // Longer than every declared id concatenated, so it cannot accidentally be one of them.
+    const undeclared = `${declaredModels.map((declared) => declared.id).join("-")}-undeclared`;
+    try {
+      await provider.complete([{ role: "user", content: prompt }], { model: undeclared });
+      return { ok: false, detail: `'${undeclared}' was accepted although it is not declared` };
+    } catch (err) {
+      const code = (err as { code?: unknown }).code;
+      if (code === "MODEL_NOT_FOUND") return true;
+      return { ok: false, detail: `expected MODEL_NOT_FOUND, got ${seen(code)}` };
+    }
+  });
+
   // Capture the completion once; the shape checks below read it. If complete() throws
   // (a propagating provider error), this check fails and `response` stays undefined,
   // so the shape checks fail gracefully instead of crashing.
   let response: unknown;
   await check("complete() resolves", async () => {
-    response = await provider.complete([{ role: "user", content: prompt }]);
+    response = await provider.complete([{ role: "user", content: prompt }], { model });
     return true;
   });
 
@@ -141,7 +189,7 @@ export async function checkProviderContract(
       const boundStream = streamFn.bind(provider);
       const chunks: unknown[] = [];
       await check("stream yields at least one chunk", async () => {
-        for await (const c of boundStream([{ role: "user", content: prompt }])) {
+        for await (const c of boundStream([{ role: "user", content: prompt }], { model })) {
           chunks.push(c);
         }
         return chunks.length >= 1 ? true : { ok: false, detail: "0 chunks" };
