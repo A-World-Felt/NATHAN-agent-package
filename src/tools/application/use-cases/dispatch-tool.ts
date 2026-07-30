@@ -1,4 +1,4 @@
-import type { ToolCall, ToolDefinition } from "../../../llm/models/index.js";
+import type { ToolCall } from "../../../llm/models/index.js";
 import type { Tool } from "../../interfaces/index.js";
 import type { ToolResult } from "../../models/index.js";
 
@@ -36,19 +36,6 @@ export async function dispatchTool(call: ToolCall, tools: readonly Tool[]): Prom
       isError: true,
     };
   }
-}
-
-/**
- * Present a tool to the model. The two shapes are owned by two frameworks that ignore each
- * other, and the agent is where they meet (ADR-AGENT-0012), so this translation lives here
- * rather than inside either type.
- */
-export function toToolDefinition(tool: Tool): ToolDefinition {
-  return {
-    name: tool.name,
-    description: tool.description,
-    parameters: tool.schema,
-  };
 }
 
 /** Name what was asked for and what may be asked instead, so the model can correct itself. */

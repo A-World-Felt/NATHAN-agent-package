@@ -5,3 +5,4 @@
 export * from "./models/index.js";
 export * from "./interfaces/index.js";
 export * from "./application/use-cases/dispatch-tool.js";
+export * from "./application/use-cases/to-tool-definition.js";

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dispatchTool, toToolDefinition } from "../../../../dist/tools/index.js";
+import { dispatchTool } from "../../../../dist/tools/index.js";
 import type { Tool, ToolOutcome } from "../../../../dist/tools/index.js";
 import type { ToolCall } from "../../../../dist/llm/index.js";
 
@@ -138,14 +138,4 @@ test("a tool that throws something that is not an Error is still reported", asyn
 
   assert.equal(result.isError, true);
   assert.match(result.content, /plain string/);
-});
-
-test("toToolDefinition presents a tool to the model", () => {
-  const navigate = navigateTool();
-
-  const definition = toToolDefinition(navigate);
-
-  assert.equal(definition.name, "navigate");
-  assert.equal(definition.description, "Go to a page of the application");
-  assert.deepEqual(definition.parameters, navigate.schema);
 });
