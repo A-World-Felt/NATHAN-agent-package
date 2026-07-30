@@ -83,6 +83,7 @@ stopReason: "completed"   // natural end: no tool call
 - One more LLM call on each forced exit. Negligible next to the iterations already consumed.
 - Three bounds to configure instead of one. Mitigated by reasonable defaults: the consumer only sets one if it has a reason to.
 - The repetition detector can have false positives: an agent legitimately re-reading the same file twice. The threshold must therefore be ≥ 3, and this is a landing, not an error: the cost of a false positive stays low.
+  - **Read as a default, not as a clamp** (recorded when the loop was built). The shipped default is 3, so out-of-the-box behaviour satisfies this paragraph; a consumer asking for less is honoured rather than silently corrected. Two reasons. Ignoring configuration without saying so is a worse failure than the false positive this paragraph guards against, which the sentence above already calls cheap. And this ADR and `ADR-AGENT-0014` both appoint the harness as the arbiter of termination behaviour, so clamping would forbid the very measurement that would tell us where the floor really sits.
 
 **What does not change**
 
